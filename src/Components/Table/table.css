@@ -1,0 +1,298 @@
+.add_product_table_container {
+  display: block;
+  width: 100%;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+  border-radius: 30px;
+  overflow-x: auto;
+}
+
+.add_product_table_container  table {
+  border-collapse: collapse;
+  font-size: 14px;
+  font-family: sans-serif;
+  width: 100%;
+}
+
+.add_product_table_container  table thead tr {
+  color: #ffffff;
+  text-align: left;
+}
+
+.add_product_table_container  table thead tr:nth-child(1) {
+  border-width: 1px, 0px, 1px, 0px;
+  border-style: solid;
+  border-color: #F1F3F9;
+  color: #1D2433A6;
+  text-transform: uppercase;
+}
+
+.add_product_table_container table thead tr th {
+  font-size: 12px;
+  background: linear-gradient(0deg, #F8F9FC, #F8F9FC),
+    linear-gradient(0deg, #F1F3F9, #F1F3F9);
+  padding: 15px 0 15px 15px;
+}
+
+
+.add_product_table_container  table th, .add_product_table_container table td {
+  padding: 10px 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+.add_product_table_container  table tbody tr {
+  border-bottom: 1px solid #E1E6EF;
+}
+
+/* .add_product_table_container  table tbody tr:nth-of-type(even) {
+  background-color: #f6f6f6;
+} */
+
+.add_product_table_container  table tbody tr{
+  background-color: #fff;
+}
+
+.add_product_table_container  table tbody tr:last-of-type {
+  /* border-bottom: 2px solid #4bbd7f; */
+}
+
+.add_product_table_container  table  tbody tr.active-row {
+  font-weight: bold;
+  /* color: #4bbd7f; */
+}
+
+/* .add_product_table_container  table  td:first-child input {
+  min-width: 120px;
+} */
+.add_product_table_container  table  tr th:first-child {
+  min-width: 90px;
+  border-top-left-radius: 30px;
+}
+
+.add_product_table_container  table  tr th:last-child{
+  border-top-right-radius: 30px;
+  padding-right: 15px;
+}
+
+.add_product_table_container  table  th:nth-child(2) {
+  min-width: 120px;
+}
+
+.add_product_table_container input {
+  color: #1D2433 !important;
+}
+
+.add_product_table_container  table  th:nth-child(3){
+  min-width: 150px;
+}
+
+.add_product_table_container table th:nth-child(4) {
+  min-width: 150px;
+}
+
+.add_product_table_container  table  th:nth-child(5){
+  min-width: 90px;
+}
+.add_product_table_container  table  th:nth-child(6){
+  min-width: 50px;
+}
+
+.add_product_table_container  table  th:nth-child(7){
+  min-width: 100px;
+}
+.add_product_table_container  table  th:nth-child(8){
+  min-width: 100px;
+}
+
+.add_product_table_container  table  th:nth-child(11){
+  min-width: 155px;
+}
+.add_product_table_container  table  th:nth-child(12){
+  min-width: 140px;
+}
+/* .add_product_table_container  table  td:nth-child(3) input {
+  min-width: 400px;
+} */
+
+.upload_product_img input {
+  display: none;
+}
+
+.upload_product_img {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  padding: 12px 10px;
+  width: 115px;
+  border: 1px solid #E1E6EF !important;
+  border-radius: 12px;
+  box-shadow: 1px 1px 3px 0px #0000000F !important;
+  color: #1D2433A6 !important;
+  margin: 0;
+}
+
+.add_product_table_container  input[type="number"] {
+  /* padding-left: 30px !important; */
+}
+
+.add_product_table_container  table  .edit-cell-container button {
+  /* border-radius: 50px; */
+  /* height: 26px;
+  width: 26px; */
+  /* border: 1px solid #ccc; */
+}
+
+.add_product_table_container  table  .footer-buttons {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 7px;
+}
+
+.add_product_table_container  table  .add-button {
+  color: #D3178A;
+
+}
+
+.add_product_table_container  table  .remove-button {
+  color: #e44747;
+}
+
+.add_product_table_container  table  .footer-buttons button {
+  border: none;
+  background-color: transparent;
+}
+
+.add_product_table_container  table  .edit-cell-action button[name='edit'] {
+  color: #1D2433CC;
+  font-size: 18px;
+}
+
+.add_product_table_container  table  .edit-cell-action button[name='cancel'] {
+  color: #1D2433CC;
+  font-size: 18px;
+}
+
+.add_product_table_container  table  .edit-cell-action button[name='done'] {
+  color: #fff;
+}
+
+.add_product_table_container  table  .edit-cell-action button[name='done']:disabled {
+  color: #ccc;
+}
+
+.add_product_table_container  table  .edit-cell-action button[name='remove'] {
+  color: #1D2433CC;
+  font-size: 18px;
+
+}
+
+.add_product_table_container  table  input, .add_product_table_container  table  select {
+  border-radius: 4px;
+  padding: 5px;
+  border: 1px solid #E1E6EF !important;
+  border-radius: 12px;
+  box-shadow: 1px 1px 3px 0px #0000000F !important;
+  color: #1D2433A6 !important;
+}
+
+.add_product_table_container  table  .edit-cell-action {
+  display: flex;
+  gap: 5px;
+}
+
+.add_product_table_container  table  .edit-cell-container {
+  display: flex;
+  justify-content: end;
+  align-items: center;
+  gap: 4px;
+}
+
+.add_product_table_container  table  input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+}
+
+input:invalid {
+  border: 2px solid red;
+}
+
+select:invalid, input:invalid {
+  border: 2px solid red;
+}
+.add_product_table_container input[type=file] {
+  width: 100% !important;
+}
+
+.product_switch .switch input:checked + .switch-state {
+  background-color : #D31789 !important;
+}
+
+
+
+.offer_table_container {
+  display: block;
+  width: 100%;
+  border-radius: 30px;
+  overflow-x: auto;
+  margin-top: 30px;
+}
+
+.offer_table_container  table {
+  border-collapse: collapse;
+  font-size: 14px;
+  font-family: sans-serif;
+  width: 100%;
+}
+
+.offer_table_container  table thead tr {
+  color: #ffffff;
+  text-align: left;
+}
+
+.offer_table_container  table thead tr:nth-child(1) {
+  border-width: 1px, 0px, 1px, 0px;
+  border-style: solid;
+  border-color: #F1F3F9;
+  color: #1D2433A6;
+  text-transform: uppercase;
+}
+
+.offer_table_container table thead tr th {
+  font-size: 12px;
+  background: linear-gradient(0deg, #F8F9FC, #F8F9FC),
+    linear-gradient(0deg, #F1F3F9, #F1F3F9);
+  padding: 15px 0 15px 15px;
+}
+
+
+.offer_table_container  table th,
+.offer_table_container table td {
+  padding: 10px 10px;
+  vertical-align: middle;
+}
+
+.add_product_table_container  table tbody tr {
+  border-bottom: 1px solid #E1E6EF;
+}
+
+
+.offer_table_container  table tbody tr{
+  background-color: #fff;
+}
+
+
+.dark-only .add_product_table_container table thead tr th {
+  background: #3F444D;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.dark-only .add_product_table_container  table th,.dark-only .add_product_table_container table td {
+  background: #1d1e26;
+}
+
+.dark-only .edit-cell-action button{
+  color: rgba(255, 255, 255, 0.6) !important;
+}

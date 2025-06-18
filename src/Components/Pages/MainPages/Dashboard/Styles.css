@@ -1,0 +1,58 @@
+.table-striped > tbody > tr:nth-child(2n+1) > td, .table-striped > tbody > tr:nth-child(2n+1) > th {
+   background-color: #d3178a55;
+}
+.tableHead{
+   background-color: #ff0000;
+}
+#BasicDatePick{
+   font-size: 11px;
+   font-weight: 500;
+}
+/* td {
+    white-space: nowrap;
+    overflow: hidden;
+    width: 10px;
+    height: 25px;
+} */
+
+/* table{
+    table-layout:fixed;
+    width: 40px;
+} */
+
+.social-widget h6 {
+   font-size: 16px;
+   font-weight: 600;
+   overflow: hidden;
+   text-overflow: ellipsis;
+   display: -webkit-box;
+   -webkit-line-clamp: 1;
+   -webkit-box-orient: vertical;
+}
+
+.ellipses_1 {
+   overflow: hidden;
+   text-overflow: ellipsis;
+   display: -webkit-box;
+   -webkit-line-clamp: 1;
+   -webkit-box-orient: vertical;
+}
+
+.dash_product_img img {
+   max-width: 100% !important;
+   width: unset !important;
+   height: unset !important;
+}
+
+.dashboard_container .rdt_Table .rdt_TableBody .rdt_TableRow .rdt_TableCell:last-child {
+   justify-content: flex-start !important;
+}
+
+.dashboard_container .rdt_Table .rdt_TableHead .rdt_TableHeadRow .rdt_TableCol:last-child .rdt_TableCol_Sortable {
+   justify-content: flex-start !important;
+}
+
+.dashboard_container .card-header h6 {
+   color: #1D2433;
+   font-weight: 600;
+}

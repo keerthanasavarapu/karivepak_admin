@@ -1,0 +1,60 @@
+.sortBy {
+    width: auto !important;
+}
+
+.order_details {
+
+    .card-header,
+    .card-body {
+        padding: 15px;
+    }
+    
+
+    .detail_table {
+        font-size: 12px;
+        th {
+            font-weight: 400;
+            min-width: 140px;
+        }
+
+        td {
+            font-weight: 500;
+        }
+    }
+
+    .product_table {
+        font-size: 12px;
+        th {
+            background: #F8F9FC;
+            color: #1D2433A6;
+            font-size: 12px;
+        }
+    }
+    .billing_table {
+        td {
+            text-align: right;
+        }
+        .success { 
+            color: #08875D !important;
+            border: unset;
+            padding: unset;
+        }
+    }
+
+    .review_text {
+        font-style: italic;
+        font-size: 12px;
+    }
+
+    .total_value {
+        color:  #D3178A; 
+        font-size: 24px;
+        padding: 0;
+    }
+}
+
+.status_form {
+    label {
+        font-size: 13px;
+    }
+}

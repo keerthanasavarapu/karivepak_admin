@@ -1,0 +1,577 @@
+@import './assets/scss/app.scss';
+
+
+* {
+    font-family: "Lato", sans-serif;
+}
+
+.btn-secondary {
+    background: #007F2D !important;
+    padding: 8px 16px 8px 16px !important;
+    border: unset;
+    // height: 45px;
+    box-shadow: 0px -2px 2px 0px #00000026 inset;
+}
+
+.rdt_TableHeadRow {
+    background: #F8F9FC;
+    color: #1D2433A6;
+    text-transform: uppercase;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 18px;
+    letter-spacing: 0em;
+    text-align: left;
+}
+
+.rdt_Table {
+    .rdt_TableHead {
+        .rdt_TableHeadRow {
+            .rdt_TableCol {
+                .rdt_TableCol_Sortable {
+                    justify-content: flex-start !important;
+                }
+            }
+
+            .rdt_TableCol:last-child {
+                .rdt_TableCol_Sortable {
+                    justify-content: flex-end !important;
+                }
+            }
+        }
+    }
+
+    .rdt_TableBody {
+        .rdt_TableRow {
+            .rdt_TableCell+.rdt_TableCell {
+                justify-content: flex-start !important;
+            }
+
+            .rdt_TableCell:first-child {
+                justify-content: flex-start !important;
+            }
+
+            .rdt_TableCell:last-child {
+                justify-content: flex-end !important;
+            }
+        }
+    }
+}
+
+// .jzrolw {
+//     overflow: visible !important;
+// }
+.rdt_Pagination {
+    .svYMe svg {
+        display: none !important;
+    }
+}
+
+.file-content-dash {
+
+    select {
+        width: 130px !important;
+        // background: transparent !important;
+        padding: 0.375rem 0.75rem !important;
+        box-shadow: 1px 1px 3px 0px rgba(0, 0, 0, 0.0588235294);
+        font-size: 14px;
+    }
+
+    .datepickerr {
+        width: 130px !important;
+        background: unset !important;
+        padding: 0.375rem 0.75rem !important;
+        box-shadow: 1px 1px 3px 0px rgba(0, 0, 0, 0.0588235294);
+        font-size: 14px;
+
+    }
+
+
+
+
+    .search_outer i {
+        top: unset;
+    }
+
+    .searchh {
+        width: 150px;
+        border: 1px solid #E1E6EF !important;
+        background: #F8F9FC;
+        border-radius: 12px;
+        padding-left: 30px;
+        font-size: 14px;
+    }
+}
+
+.react-datepicker__input-container .react-datepicker__calendar-icon {
+    right: 10px;
+}
+
+.react-datepicker__input-container {
+    display: flex;
+    align-items: center;
+}
+
+.filter_btn {
+    background: transparent !important;
+    border: 1px solid #E1E6EF !important;
+    box-shadow: 1px 1px 3px 0px rgba(0, 0, 0, 0.0588235294) !important;
+    padding: 10px !important;
+    border-radius: 12px;
+}
+
+.p_15 {
+    padding: 15px !important;
+}
+
+.rdt_TableBody {
+    min-height: 250px;
+}
+
+.switches-container {
+    width: 20rem;
+    margin: 20px 0 15px 0;
+    position: relative;
+    display: flex;
+    padding: 0;
+    position: relative;
+    background: #007F2D !important;
+    line-height: 3rem;
+    border-radius: 3rem;
+    margin-left: auto;
+    margin-right: auto;
+    color: #fff;
+
+
+    /* input (radio) for toggling. hidden - use labels for clicking on */
+    input {
+        visibility: hidden;
+        display: none;
+        position: absolute;
+        top: 0;
+    }
+
+    /* labels for the input (radio) boxes - something to click on */
+    label {
+        width: 50%;
+        padding: 0;
+        margin: 0;
+        text-align: center;
+        cursor: pointer;
+        color: var(--switches-label-color);
+    }
+
+    /* switch highlighters wrapper (sliding left / right) 
+    - need wrapper to enable the even margins around the highlight box
+*/
+    .switch-wrapper {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 50%;
+        padding: 0.15rem;
+        z-index: 3;
+        transition: transform .5s cubic-bezier(.77, 0, .175, 1);
+        /* transition: transform 1s; */
+    }
+
+    /* switch box highlighter */
+    .switch {
+        border-radius: 3rem;
+        background: #fff;
+        height: 100%;
+        width: 100% !important;
+        color: #007F2D;
+    }
+
+    /* switch box labels
+    - default setup
+    - toggle afterwards based on radio:checked status 
+*/
+    .switch div {
+        width: 100%;
+        text-align: center;
+        opacity: 0;
+        display: block;
+        color: var(--switch-text-color);
+        transition: opacity .2s cubic-bezier(.77, 0, .175, 1) .125s;
+        will-change: opacity;
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
+
+    /* slide the switch box from right to left */
+    input:nth-of-type(1):checked~.switch-wrapper {
+        transform: translateX(0%);
+    }
+
+    /* slide the switch box from left to right */
+    input:nth-of-type(2):checked~.switch-wrapper {
+        transform: translateX(100%);
+    }
+
+    /* toggle the switch box labels - first checkbox:checked - show first switch div */
+    input:nth-of-type(1):checked~.switch-wrapper .switch div:nth-of-type(1) {
+        opacity: 1;
+    }
+
+    /* toggle the switch box labels - second checkbox:checked - show second switch div */
+    input:nth-of-type(2):checked~.switch-wrapper .switch div:nth-of-type(2) {
+        opacity: 1;
+    }
+}
+
+
+.ellipses_text_1 {
+    // font-size: 14px;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 10px;
+}
+
+.ellipses_text_2 {
+    // font-size: 14px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 10px;
+}
+
+.ellipses_text_3 {
+    // font-size: 14px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 10px;
+    // text-decoration: 'underline';
+    cursor: 'pointer';
+    // transition: 'color 0.3s';
+    text-decoration-line: underline;
+
+    &:hover {
+        color: #007F2D;
+        // rgb(1, 1, 1);
+        // text-decoration: none;
+        text-decoration-line: none;
+        font-weight: 600;
+        cursor: pointer;
+    }
+}
+
+
+.ellipses_text_5 {
+    display: -webkit-box;
+    -webkit-line-clamp: 5;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+}
+
+.page-wrapper .page-body-wrapper div.sidebar-wrapper .sidebar-main .sidebar-links>li a svg.stroke-icon {
+    stroke: unset;
+}
+
+[type='text'],
+input:where(:not([type])),
+[type='email'],
+[type='url'],
+[type='password'],
+[type='number'],
+[type='date'],
+[type='datetime-local'],
+[type='month'],
+[type='search'],
+[type='tel'],
+[type='time'],
+[type='week'],
+[multiple],
+textarea,
+select {
+    display: block;
+    width: 100%;
+    padding: 0.375rem 0.75rem;
+    font-size: 1rem;
+    font-weight: 400;
+    line-height: 1.5;
+    color: var(--bs-body-color);
+    appearance: none;
+    background-color: var(--bs-body-bg);
+    background-clip: padding-box;
+    border: var(--bs-border-width) solid var(--bs-border-color);
+    border-radius: var(--bs-border-radius);
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.com_modal_header {
+    .modal-title {
+        font-weight: 600;
+    }
+}
+
+.dark-mode-div {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 20px;
+    position: relative;
+    color: #222222;
+    transition: all 0.3s ease;
+    cursor: pointer;
+
+    span {
+        letter-spacing: 0.7px;
+        text-transform: capitalize;
+        color: rgba(82, 82, 108, 0.8);
+        font-weight: 600;
+    }
+
+    svg {
+        width: 18px;
+        height: 18px;
+        margin-right: 10px;
+        vertical-align: -2px;
+        float: none;
+        transition: all 0.3s ease;
+    }
+}
+
+body.dark-only {
+    .dark-mode-div {
+        span {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        svg {
+            stroke: #fff;
+        }
+    }
+}
+
+.light-only {
+    .card {
+        border: 1px solid #E1E6EF !important;
+    }
+}
+
+.dark-only {
+    .card {
+        border: 1px solid #3F444D !important;
+        color: #fff;
+
+        .square_box {
+            filter: brightness(100);
+        }
+    }
+
+    .rdt_TableHeadRow {
+        background-color: #3F444D !important;
+    }
+
+    .page-wrapper {
+        .page-body-wrapper {
+            .page-body {
+                .form-control {
+                    border-color: #3F444D !important;
+                    color: #fff;
+
+                    &::placeholder {
+                        color: #fff;
+                    }
+                }
+            }
+        }
+    }
+
+    .eDckxA {
+        background-color: #262932;
+    }
+
+    .jzrolw {
+        border-radius: unset !important;
+    }
+
+    .rdt_Pagination {
+        border-bottom-left-radius: 15px;
+        border-bottom-right-radius: 15px;
+    }
+
+    .action_btn svg {
+        stroke: white;
+    }
+
+    .my-select__control {
+        background-color: #333;
+        color: #fff;
+    }
+
+    .my-select__option {
+        background-color: #444;
+        color: #fff;
+    }
+
+    .my-select__single-value {
+        color: #fff;
+    }
+
+    .css-13cymwt-control {
+        background-color: #1d1e26 !important;
+        color: #fff
+    }
+
+    .css-t3ipsp-control {
+        background-color: #1d1e26 !important;
+        color: #fff !important;
+    }
+
+    .css-166bipr-Input {
+        color: #fff !important;
+    }
+
+    .css-wsp0cs-MultiValueGeneric {
+        color: #fff;
+    }
+
+    .rdt_Table {
+        background: transparent !important;
+    }
+
+    .form-select {
+        background-color: #262932 !important;
+        border: 1px solid #3F444D !important;
+    }
+
+    .form-control {
+        background-color: transparent !important;
+        border: 1px solid #3F444D !important;
+        color: #fff;
+    }
+
+    .form-control::placeholder {
+        color: #FFFFFF99;
+    }
+
+    .store_img_wrapper p {
+        color: #fff;
+    }
+
+    .form-label {
+        color: #fff;
+    }
+
+    .modal_btm {
+        border-top: 1px solid #3F444D;
+    }
+
+    .input-group-text {
+        background: transparent;
+        border-color: #3F444D;
+        color: #fff;
+    }
+
+    .cancel_Btn {
+        border-color: #3F444D !important;
+        background: #23272F !important;
+        color: #FFFFFF !important;
+        opacity: 1 !important;
+    }
+
+    .Save_Btn {
+        background: #23272F !important;
+        border-color: transparent !important;
+        color: #fff !important;
+    }
+
+    .modal-content {
+        background: #1B1F27 !important;
+    }
+
+    .css-1p3m7a8-multiValue svg {
+        color: white;
+    }
+
+    .css-1nmdiq5-menu {
+        background-color: #1B1F27 !important;
+        color: #fff;
+    }
+
+    .store_card_outer {
+        .media-body {
+            p {
+                color: #FFFFFFBF;
+            }
+        }
+    }
+
+    .store_card_outer .media-body .viewStore_btn {
+        background: transparent !important;
+        border-color: #3F444D !important;
+        color: #ffffff !important;
+    }
+
+    .upload_product_img {
+        color: #FFFFFF !important;
+    }
+
+    .add_product_table_container table input,
+    .add_product_table_container table select {
+        color: #FFFFFF !important;
+        background-color: #1d1e26;
+        border-color: #3F444D;
+    }
+
+    .switch-state:before {
+        background-color: #ffffff !important;
+    }
+
+    .react-datepicker__input-container .react-datepicker__calendar-icon {
+        fill: #FFFFFF;
+    }
+
+    .offer_table_container table thead tr th {
+        background: #3F444D;
+        color: #fff;
+    }
+}
+
+input {
+    box-shadow: 1px 1px 3px 0px #0000000F !important;
+    border: 1px solid #E1E6EF !important;
+    border-radius: 12px !important;
+}
+
+select {
+    box-shadow: 1px 1px 3px 0px #0000000F !important;
+    border: 1px solid #E1E6EF !important;
+    border-radius: 12px !important;
+}
+
+textarea {
+    box-shadow: 1px 1px 3px 0px #0000000F !important;
+    border: 1px solid #E1E6EF !important;
+    border-radius: 12px !important;
+}
+
+.rdt_Pagination select {
+    width: auto !important;
+}
+
+.rdt_Pagination select+svg {
+    display: none !important;
+}
+
+.rouned-top-0 {
+    border-top-left-radius: 0 !important;
+}
+
+.rounded-left-0 {
+    border-bottom-left-radius: 0 !important;
+}
