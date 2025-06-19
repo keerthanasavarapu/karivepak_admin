@@ -14,8 +14,8 @@ import Swal from 'sweetalert2';
 import { baseURL } from '../../../../Services/api/baseURL';
 import { FaPen, FaTrash } from 'react-icons/fa';
 import Loader from '../../../Loader/Loader';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchMainCategories } from '../../../../redux/slice/maincategory.slice';
+// import { useDispatch, useSelector } from 'react-redux';
+// import { fetchMainCategories } from '../../../../redux/slice/maincategory.slice';
 
 const CategoryTable = () => {
     const userRole = JSON.parse(localStorage.getItem('role_name'));
@@ -23,7 +23,7 @@ const CategoryTable = () => {
 
     const [editData, setEditData] = useState(null);
     const [editMetaData, setEditMetaData] = useState(null);
-    console.log(editMetaData,"editMetaData")
+    console.log(editMetaData, "editMetaData")
 
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -40,14 +40,15 @@ const CategoryTable = () => {
         metaTitle: "",
         metaDescription: ""
     });
-        const [metaData, setMetaData] = useState({
+    const [metaData, setMetaData] = useState({
         metaTitle: "",
         metaDescription: ""
     });
-console.log(metaData,"metaData")
+    console.log(metaData, "metaData")
 
-    const dispatch = useDispatch();
-    const { categories, totalRows /* removed loading from here */ } = useSelector(state => state.maincategory); // Adjusted selector and removed loading
+    // const dispatch = useDispatch();
+    // const { categories, totalRows /* removed loading from here */ } = useSelector(state => state.maincategory); // Adjusted selector and removed loading
+    const [categories, setCategories] = useState([]);
 
     const [pagination, setPagination] = useState({
         page: 1,
@@ -55,11 +56,47 @@ console.log(metaData,"metaData")
         totalRows: 0
     });
 
-    // Fetch categories using Redux
+    const fetchCategories = async (page = 1) => {
+        setLoading(true);
+        try {
+            const rawToken = localStorage.getItem('token');
+            if (!rawToken) throw new Error("No token found in localStorage");
+
+            const token = JSON.parse(rawToken);
+            const response = await axios.get(`${baseURL}/api/maincategory`, {
+                params: {
+                    page,
+                    limit: pagination.perPage,
+                },
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            const categoriesData = response.data.mainCategories || [];
+
+            setCategories(categoriesData);
+            setPagination(prev => ({
+                ...prev,
+                totalRows: response.data.count || categoriesData.length,
+            }));
+
+        } catch (error) {
+            console.error('Error fetching categories:', error);
+            Swal.fire({
+                title: "Error",
+                text: error?.response?.data?.message || "Failed to fetch categories",
+                icon: "error",
+                confirmButtonColor: "#fc2c54",
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        dispatch(fetchMainCategories(pagination.page, pagination.perPage)); // Use fetchMainCategories
-        // eslint-disable-next-line
-    }, [dispatch, pagination.page, pagination.perPage]);
+        fetchCategories(1);
+    }, []);
 
     // Modal Toggle
     const toggleModal = () => {
@@ -68,7 +105,7 @@ console.log(metaData,"metaData")
             resetForm();
         }
     };
-        const toggleMetaModal = () => {
+    const toggleMetaModal = () => {
         setIsMetaOpen(!isMetaOpen);
         if (isMetaOpen) {
             resetMetaForm();
@@ -93,11 +130,11 @@ console.log(metaData,"metaData")
             imagePreview: null
         });
     };
-        const resetMetaForm = () => {
+    const resetMetaForm = () => {
         setEditMetaData(null);
         setMetaData({
-       metaTitle: "",
-        metaDescription: ""
+            metaTitle: "",
+            metaDescription: ""
         });
     };
 
@@ -120,12 +157,12 @@ console.log(metaData,"metaData")
         }
     };
 
-    const handleChange=(e)=>{
-            const { name, value,  } = e.target;
-                        setMetaData(prev => ({
-                ...prev,
-                [name]: value
-            }));
+    const handleChange = (e) => {
+        const { name, value, } = e.target;
+        setMetaData(prev => ({
+            ...prev,
+            [name]: value
+        }));
 
     }
 
@@ -175,7 +212,7 @@ console.log(metaData,"metaData")
             }
 
             toggleModal();
-            dispatch(fetchMainCategories(pagination.page, pagination.perPage)); // Use fetchMainCategories
+            fetchCategories(pagination.page);
         } catch (error) {
             console.error('Error submitting category:', error);
             Swal.fire({
@@ -191,38 +228,38 @@ console.log(metaData,"metaData")
 
 
 
-const handleMetaSubmit=async(e)=>{
-    e.preventDefault();
-    setLoading(true);
-    try {
-        console.log(editMetaData._id,"editMetaDataId")
-      const response=  await axios.put(`${baseURL}/api/maincategory/admin/${editMetaData._id}`, metaData, {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    }
-                });
+    const handleMetaSubmit = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            console.log(editMetaData._id, "editMetaDataId")
+            const response = await axios.put(`${baseURL}/api/maincategory/admin/${editMetaData._id}`, metaData, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                }
+            });
 
-                Swal.fire({
-                    title: response?.data?.message,
-                    icon: "success",
-                    confirmButtonColor: "#fc2c54",
-                });
-                console.log(response,"reponse of meta");
-                toggleMetaModal();
-        dispatch(fetchMainCategories(pagination.page, pagination.perPage));
-    } catch (error) {
-                    console.error('Error submitting category:', error);
+            Swal.fire({
+                title: response?.data?.message,
+                icon: "success",
+                confirmButtonColor: "#fc2c54",
+            });
+            console.log(response, "reponse of meta");
+            toggleMetaModal();
+            fetchCategories(pagination.page);
+        } catch (error) {
+            console.error('Error submitting category:', error);
             Swal.fire({
                 title: "Error",
                 text: error.response?.data?.message || "Failed to submit category",
                 icon: "error",
                 confirmButtonColor: "#fc2c54",
-        
-    })
-    } finally {
+
+            })
+        } finally {
             setLoading(false);
         }
-}
+    }
 
 
 
@@ -240,7 +277,7 @@ const handleMetaSubmit=async(e)=>{
         setIsModalOpen(true);
     };
 
-        const handleAddMetaData = (row) => {
+    const handleAddMetaData = (row) => {
         setEditMetaData(row);
         setMetaData({
             metaTitle: row.metaTitle || "",
@@ -250,7 +287,7 @@ const handleMetaSubmit=async(e)=>{
     };
 
 
-    
+
 
     // Delete Category
     const handleDeleteCategory = async () => {
@@ -271,7 +308,7 @@ const handleMetaSubmit=async(e)=>{
             });
 
             toggleDeleteModal();
-            dispatch(fetchMainCategories(pagination.page, pagination.perPage)); // Use fetchMainCategories
+            fetchCategories(pagination.page); // Use fetchMainCategories
         } catch (error) {
             console.error('Error deleting category:', error);
             Swal.fire({
@@ -358,10 +395,10 @@ const handleMetaSubmit=async(e)=>{
                         <MoreVertical size={16} />
                     </DropdownToggle>
                     <DropdownMenu>
-                        <DropdownItem onClick={() => handleEditCategory(row)}      style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                        <DropdownItem onClick={() => handleEditCategory(row)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
                             <FaPen className="mr-2" /> Edit
                         </DropdownItem>
-                        <DropdownItem onClick={() => handleAddMetaData(row)}      style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                        <DropdownItem onClick={() => handleAddMetaData(row)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
                             <FaPen className="mr-2" /> Add meta Data
                         </DropdownItem>
                         {userRole && userRole.toLowerCase() === 'admin' && (
@@ -420,7 +457,7 @@ const handleMetaSubmit=async(e)=>{
                 columns={columns}
                 pagination
                 paginationServer
-                paginationTotalRows={totalRows}
+                paginationTotalRows={pagination.totalRows} // <-- fix here
                 onChangePage={(page) => {
                     setPagination(prev => ({ ...prev, page }));
                 }}
@@ -504,7 +541,7 @@ const handleMetaSubmit=async(e)=>{
                 <Container>
                     <Form onSubmit={handleMetaSubmit}>
                         <Col xxl={12}>
-                                 <FormGroup>
+                            <FormGroup>
                                 <Label className="font-medium text-base">
                                     Meta Title <span className="text-danger">*</span>
                                 </Label>
@@ -516,7 +553,7 @@ const handleMetaSubmit=async(e)=>{
                                     required
                                 />
                             </FormGroup>
-                             <FormGroup>
+                            <FormGroup>
                                 <Label className="font-medium text-base">
                                     Meta Description <span className="text-danger">*</span>
                                 </Label>

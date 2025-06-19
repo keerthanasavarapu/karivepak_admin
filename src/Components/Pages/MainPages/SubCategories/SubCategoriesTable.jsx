@@ -25,6 +25,7 @@ import CommonModal from '../../../UiKits/Modals/common/modal';
 import Loader from '../../../Loader/Loader';
 
 const SubCategoriesTable = () => {
+    const [editData, setEditData] = useState(null);
     const [userData, setUserData] = useState({
         role: '',
         token: ''
@@ -53,43 +54,59 @@ const SubCategoriesTable = () => {
     });
     const [searchTerm, setSearchTerm] = useState('');
 
+
+
+
     useEffect(() => {
-        const token = JSON.parse(localStorage.getItem('token'));
-        const role = JSON.parse(localStorage.getItem('role_name'));
+        const token = JSON.parse(localStorage.getItem("token") || "null");
+        const role = JSON.parse(localStorage.getItem("role_name") || "null");
         setUserData({ role, token });
     }, []);
+
 
     useEffect(() => {
         if (userData.token) {
             fetchCategories();
-            fetchSubCategories(tableState.currentPage);
+            fetchSubCategories();
         }
-    }, [userData.token]);
+    }, [userData.token, pagination.page, pagination.perPage]);
+
+
 
     const fetchCategories = async () => {
         try {
-            const response = await axios.get(`${baseURL}/api/categories/getAll`, {
+            const response = await axios.get(`${baseURL}/api/maincategory`, {
                 headers: { Authorization: `Bearer ${userData.token}` }
             });
-            setCategoriesData(response.data.categories);
+
+            // Fix here: correctly set the mainCategories
+            setCategoriesData(response.data.mainCategories || []);
         } catch (error) {
             console.error('Error fetching categories:', error);
         }
     };
 
-    const fetchSubCategories = async (page) => {
+
+    const fetchSubCategories = async () => {
         setTableState(prev => ({ ...prev, loading: true }));
+        console.log("hittin API with pagination:", pagination);
         try {
-            const response = await axios.get(`${baseURL}/api/subcategories`, {
-                params: { page, limit: pagination.perPage },
-                headers: { Authorization: `Bearer ${userData.token}` }
+            const response = await axios.get(`${baseURL}/api/category`, {
+                params: {
+                    page: pagination.page,
+                    limit: pagination.perPage
+                },
+                headers: {
+                    Authorization: `Bearer ${userData.token}`
+                }
             });
+            console.log("Subcategories response:", response.data);
+
             setTableState(prev => ({
                 ...prev,
-                data: response.data.subcategory,
-                totalRows: response.data.total,
-                currentPage: page,
-                loading: false
+                data: response.data.categories || [],
+                totalRows: response.data.total || 0,
+                loading: false,
             }));
         } catch (error) {
             console.error('Error fetching subcategories:', error);
@@ -97,8 +114,9 @@ const SubCategoriesTable = () => {
         }
     };
 
+
     const handleSubmitSubCategory = async () => {
-        // Validation
+        // 🔍 Validation
         if (!formData.categoryId && !modalState.selectedSubCategory) {
             Swal.fire({
                 title: "Please select a Category",
@@ -107,6 +125,7 @@ const SubCategoriesTable = () => {
             });
             return;
         }
+
         if (!formData.subCategoryName.trim()) {
             Swal.fire({
                 title: "Please enter Sub Category Name",
@@ -115,38 +134,54 @@ const SubCategoriesTable = () => {
             });
             return;
         }
-    
-        try {
-            const endpoint = modalState.selectedSubCategory
-                ? `${baseURL}/api/subcategories/${modalState.selectedSubCategory._id}`
-                : `${baseURL}/api/subcategories`;
-    
-            const method = modalState.selectedSubCategory ? 'put' : 'post';
-    
-            const requestData = {
-                subCategoryName: formData.subCategoryName.trim(),
-            };
-            if (!modalState.selectedSubCategory) {
-                requestData.categoryId = formData.categoryId;
-            }
-    
-            const response = await axios[method](endpoint, requestData, {
-                headers: { Authorization: `Bearer ${userData.token}` },
-            });
-    
-            console.log(response);
-    
+
+        if (!modalState.selectedSubCategory && !formData.image) {
             Swal.fire({
-                title: modalState.selectedSubCategory
-                    ? "Sub Category Updated!"
-                    : "Sub Category Added!",
+                title: "Please select an image",
+                icon: "warning",
+                confirmButtonColor: "#fc2c54",
+            });
+            return;
+        }
+
+        try {
+            const isEdit = Boolean(modalState.selectedSubCategory);
+            const endpoint = isEdit
+                ? `${baseURL}/api/category/${modalState.selectedSubCategory._id}`
+                : `${baseURL}/api/category`;
+            const method = isEdit ? "put" : "post";
+
+            const data = new FormData();
+
+            // ✅ Use field names expected by backend
+            data.append("name", formData.subCategoryName.trim());
+
+            // ✅ Only send main_category when adding
+            if (!isEdit) {
+                data.append("main_category", formData.categoryId);
+            }
+
+            if (formData.image) {
+                data.append("image", formData.image);
+            }
+
+            const response = await axios[method](endpoint, data, {
+                headers: {
+                    Authorization: `Bearer ${userData.token}`,
+                    "Content-Type": "multipart/form-data",
+                },
+            });
+
+            Swal.fire({
+                title: isEdit ? "Sub Category Updated!" : "Sub Category Added!",
                 icon: "success",
                 confirmButtonColor: "#fc2c54",
             });
-    
+
             fetchSubCategories(tableState.currentPage);
             resetModal();
         } catch (error) {
+            console.error("Subcategory error:", error);
             Swal.fire({
                 title: error?.response?.data?.message || "Error occurred",
                 icon: "error",
@@ -154,13 +189,14 @@ const SubCategoriesTable = () => {
             });
         }
     };
-    
+
+
 
     const handleDeleteSubCategory = async () => {
         try {
             if (!modalState.selectedSubCategory) return;
-            
-            await axios.delete(`${baseURL}/api/subcategories/${modalState.selectedSubCategory._id}`, {
+
+            await axios.delete(`${baseURL}/api/category/${modalState.selectedSubCategory._id}`, {
                 headers: { Authorization: `Bearer ${userData.token}` },
             });
 
@@ -190,16 +226,29 @@ const SubCategoriesTable = () => {
         setFormData({ categoryId: '', subCategoryName: '' });
     };
 
-    const tableColumns = [     
+    const tableColumns = [
+        {
+            name: 'Image',
+            selector: row => row.image,
+            center: true,
+            cell: row => (
+                <img
+                    src={row.image}
+                    alt={row.name}
+                    style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '8px' }}
+                />
+            )
+        },
+
         {
             name: 'Sub-Category Name',
-            selector: row => row.subCategoryName,
+            selector: row => row.name,
             sortable: true,
             center: true,
         },
         {
             name: 'Category Name',
-            selector: row => row.categoryId?.categoryName || 'N/A',
+            selector: row => row.main_category?.name || 'N/A',
             sortable: true,
             center: true,
         },
@@ -221,7 +270,7 @@ const SubCategoriesTable = () => {
             name: 'Actions',
             cell: (row) => (
                 <UncontrolledDropdown>
-                    <DropdownToggle tag="span" className="p-2 cursor-pointer">
+                    <DropdownToggle tag="span" className="p-2 cursor-pointer ">
                         <MoreVertical size={16} />
                     </DropdownToggle>
                     <DropdownMenu>
@@ -233,26 +282,28 @@ const SubCategoriesTable = () => {
                                     selectedSubCategory: row
                                 }));
                                 setFormData({
-                                    categoryId: row.categoryId._id,
-                                    subCategoryName: row.subCategoryName
+                                    categoryId: row.main_category._id,
+                                    subCategoryName: row.name
                                 });
                             }}
-                                 style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
                         >
                             <FaPen className="mr-2" /> Edit
                         </DropdownItem>
-        {userData.role === 'Admin' &&                <DropdownItem
-                            onClick={() => {
-                                setModalState(prev => ({
-                                    ...prev,
-                                    isDeleteModalOpen: true,
-                                    selectedSubCategory: row
-                                }));
-                            }}
-                                 style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
-                        >
-                            <FaTrash className="mr-2" /> Delete
-                        </DropdownItem>}
+                        {userData.role === 'admin' && (
+                            <DropdownItem
+                                onClick={() => {
+                                    setModalState(prev => ({
+                                        ...prev,
+                                        isDeleteModalOpen: true,
+                                        selectedSubCategory: row
+                                    }));
+                                }}
+                                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+                            >
+                                <FaTrash className="mr-2" /> Delete
+                            </DropdownItem>
+                        )}
                     </DropdownMenu>
                 </UncontrolledDropdown>
             ),
@@ -261,6 +312,25 @@ const SubCategoriesTable = () => {
             width: "120px",
         }
     ];
+
+
+    const handleInputChange = (e) => {
+        const { name, value, files } = e.target;
+
+        if (name === 'image' && files[0]) {
+            const file = files[0];
+            setFormData(prev => ({
+                ...prev,
+                image: file,
+                imagePreview: URL.createObjectURL(file)
+            }));
+        } else {
+            setFormData(prev => ({
+                ...prev,
+                [name]: value
+            }));
+        }
+    };
 
     return (
         <div>
@@ -296,9 +366,11 @@ const SubCategoriesTable = () => {
 
             <DataTable
                 columns={tableColumns}
-                data={tableState.data.filter(item =>
-                    item.subCategoryName?.toLowerCase().includes(searchTerm.toLowerCase()) || false
-                )}
+                data={
+                    (Array.isArray(tableState.data) ? tableState.data : []).filter(item =>
+                        item.name?.toLowerCase().includes(searchTerm.toLowerCase())
+                    )
+                }
                 pagination
                 paginationServer
                 progressPending={tableState.loading}
@@ -306,19 +378,18 @@ const SubCategoriesTable = () => {
                 paginationTotalRows={tableState.totalRows}
                 onChangePage={(page) => {
                     setPagination(prev => ({ ...prev, page }));
-                    fetchSubCategories(page);
                 }}
                 onChangeRowsPerPage={(newPerPage, page) => {
                     setPagination(prev => ({ ...prev, perPage: newPerPage, page }));
-                    fetchSubCategories(page);
                 }}
-                paginationPerPage={tableState.perPage}
+                paginationPerPage={pagination.perPage}
             />
+
 
             {/* Add Sub Category Modal */}
             <CommonModal
                 isOpen={modalState.isAddModalOpen}
-                title={modalState.selectedSubCategory ? "Update Sub Category" : "Add Sub Category"}
+                name={modalState.selectedSubCategory ? "Update Sub Category" : "Add Sub Category"}
                 toggler={resetModal}
                 className="store_modal"
                 size="md"
@@ -338,7 +409,7 @@ const SubCategoriesTable = () => {
                                 <option value="">Select Category</option>
                                 {categoriesData.map(category => (
                                     <option key={category._id} value={category._id}>
-                                        {category.categoryName}
+                                        {category.name}
                                     </option>
                                 ))}
                             </Input>
@@ -351,6 +422,31 @@ const SubCategoriesTable = () => {
                                 onChange={(e) => setFormData(prev => ({ ...prev, subCategoryName: e.target.value }))}
                                 placeholder="Enter Sub Category Name"
                             />
+                        </FormGroup>
+                        <FormGroup>
+                            <Label className="font-medium text-base">
+                                Image {!editData && <span className="text-danger">*</span>}
+                            </Label>
+                            <Input
+                                type="file"
+                                name="image"
+                                onChange={handleInputChange}
+                                accept="image/*"
+                                required={!editData}
+                            />
+                            {formData.imagePreview && (
+                                <div className="mt-2">
+                                    <img
+                                        src={formData.imagePreview}
+                                        alt="Category Preview"
+                                        style={{
+                                            maxWidth: '200px',
+                                            maxHeight: '200px',
+                                            objectFit: 'cover'
+                                        }}
+                                    />
+                                </div>
+                            )}
                         </FormGroup>
                         <Row className="text-center">
                             <Button
@@ -375,7 +471,7 @@ const SubCategoriesTable = () => {
             >
                 <Container>
                     <div className="text-center mb-4">
-                     
+
                         <h5>Are you sure you want to delete this sub-category  {modalState?.selectedSubCategory?.subCategoryName}?</h5>
                         <p className="text-muted">
                             {/* {modalState.selectedSubCategory?.subCategoryName} */}

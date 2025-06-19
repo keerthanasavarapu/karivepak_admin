@@ -1,580 +1,629 @@
-import React, { Fragment, useCallback, useEffect, useRef, useState } from 'react'
+
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import DataTable from 'react-data-table-component';
-import { Btn, H1, H4, H6, Image, P, Spinner, ToolTip } from '../../../../AbstractElements';
-import { products, spinnerData } from './data';
-import { Col, FormGroup, Input, Label, Row, Card, CardBody, TabContent, TabPane, Nav, NavItem, NavLink, Media, Button, DropdownToggle, UncontrolledAccordion, DropdownMenu, DropdownItem, UncontrolledDropdown, CardTitle, CardText } from 'reactstrap';
-import { Download, MoreVertical, PlusCircle, PlusSquare, Trash, Upload } from 'react-feather';
-// import * as XLSX from 'xlsx';
+import {
+    Button,
+    Col,
+    DropdownItem,
+    DropdownMenu,
+    DropdownToggle,
+    Form,
+    FormGroup,
+    Input,
+    Label,
+    Row,
+    UncontrolledDropdown,
+    Modal,
+    ModalHeader,
+    ModalBody,
+    ModalFooter,
+    Container,
+} from 'reactstrap';
+import {
+    PlusCircle,
+    MoreVertical,
+    Edit,
+    Trash2
+} from 'react-feather';
 import axios from 'axios';
-import 'react-dropdown/style.css';
 import Swal from 'sweetalert2';
-import { Link, useNavigate } from 'react-router-dom';
-import { baseURL, imageURL, productBaseURL } from '../../../../Services/api/baseURL';
-import endPoints from '../../../../Services/EndPoints';
-import dummyImg from '../../../../assets/images/product/2.png';
+import moment from 'moment';
+import { baseURL } from '../../../../Services/api/baseURL';
 import Loader from '../../../Loader/Loader';
-import { FaPen } from "react-icons/fa";
-import { FaTrashAlt } from "react-icons/fa";
-import { useDataContext } from '../../../../context/hooks/useDataContext';
+import { FaTrash } from 'react-icons/fa';
 
-const ItemsTable = () => {
-    const navigate = useNavigate();
-    const userRole = JSON.parse(localStorage.getItem('role_name'));
-    const { productsData, setProductsData } = useDataContext();
-    const [selectedRows, setSelectedRows] = useState([]);
-    const [editData, seteditdata] = useState([]);
-    const [subCollectionData, setSubCollectionData] = useState([])
-    const [collectionData, setCollectionData] = useState([])
-    const [deleteModal, setDeleteModal] = useState(false)
+
+const ProductsTable = () => {
+    // State Management
+    const [products, setProducts] = useState({
+        data: [],
+        loading: false,
+        totalRows: 0,
+        perPage: 10,
+        currentPage: 1
+    });
+
+    const [categories, setCategories] = useState([]);
+    const [subCategories, setSubCategories] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const [toggleDelet, setToggleDelet] = useState(false);
-    const [BasicTab, setBasicTab] = useState(1);
-    const [dropdownOpen, setDropdownOpen] = useState(false);
-    const [selectedCollectionId, setSelectedCollectionId] = useState(null);
-    const [subCollectionValue, setSubCollectionValue] = useState("");
-    const toggle = () => setDropdownOpen((prevState) => !prevState);
-    const [selectedFile, setSelectedFile] = useState(null);
+    const [maincategory, setMainCategory] = useState([]);
+    const [modal, setModal] = useState({
+        isOpen: false,
+        type: 'add', // 'add', 'edit', 'delete'
+        selectedProduct: null
+    });
 
-    const handleFileChange = (event) => {
-        setSelectedFile(event.target.files[0]);
+    const [formData, setFormData] = useState({
+        productName: '',
+        categoryId: '',
+        subCategoryId: '',
+        // description: '',
+        image: null,               // for storing file object
+        imagePreview: '',          // for showing preview if needed
+        price: '',                 // number input
+        quantity: '',              // number input
+        stock: ''                  // number input
+    });
+
+
+    // Authentication
+    const token = localStorage.getItem('token') ?
+        JSON.parse(localStorage.getItem('token')) : null;
+    const userRole = localStorage.getItem('role_name') ?
+        JSON.parse(localStorage.getItem('role_name')) : null;
+
+
+    // Fetch Products
+    const fetchProducts = async (page = 1, limit = 10, search = '') => {
+        setProducts(prev => ({ ...prev, loading: true }));
+        try {
+            const response = await axios.get(`${baseURL}/api/products`, {
+                params: { page, limit, search },
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            setProducts({
+                data: response.data.products || [],
+                loading: false,
+                totalRows: response.data.total || 0,
+                perPage: limit,
+                currentPage: page
+            });
+
+            return response.data;
+        } catch (error) {
+            setProducts(prev => ({ ...prev, loading: false }));
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.response?.data?.message || 'Failed to fetch products'
+            });
+        }
     };
 
-    const handleRowSelected = useCallback(state => {
-        setSelectedRows(state.selectedRows);
-    }, []);
 
-    // const fetchCategoryList = async () => {
-    //     const token = await JSON.parse(localStorage.getItem("token"))
-    //     try {
-    //         const collectData = await axios.get(`${baseURL}/api/admin/get-collections?page=1&limit=1000`, {
-    //             headers: {
-    //                 Authorization: `${token}`,
-    //             }
-    //         });
-    //         let data = collectData?.data?.data.filter((item) => item.status === "active")
-    //         setCollectionData(data)
-    //     } catch (error) {
-    //         console.log(error)
-    //     }
-    // }
 
-    // const fetchSubcollectionsList = async () => {
-    //     const token = await JSON.parse(localStorage.getItem("token"))
-    //     let limit = 1000;
-    //     try {
-    //         const response = await axios.get(`${baseURL}/api/admin/get-sub-collections?page=1&limit=${limit}`, {
-    //             headers: {
-    //                 Authorization: `${token}`
-    //             }
-    //         })
-    //         let data = response?.data?.data.filter((item) => item.status === "active");
-    //         setSubCollectionData(data);
+    // Fetch Categories & Subcategories, then Products
+    const fetchInitialData = useCallback(async () => {
+        try {
+            const [categoriesRes, subCategoriesRes] = await Promise.all([
+                axios.get(`${baseURL}/api/maincategory`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                }),
+                axios.get(`${baseURL}/api/category`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                })
+            ]);
 
-    //     } catch (error) {
-    //         console.log(error)
-    //     }
-    // }
+            setCategories(categoriesRes.data.mainCategories || []);
+            setSubCategories(subCategoriesRes.data.categories || []);
 
-    // const fetchItems = async () => {
-    //     setIsLoading(true)
-    //     const token = await JSON.parse(localStorage.getItem("token"))
-    //     try {
-    //         let params = {};
-    //         if (selectedCollectionId) {
-    //             params = {
-    //                 category_id: selectedCollectionId
-    //             };
-    //         }
-    //         if (subCollectionValue) {
-    //             params = {
-    //                 subCategory_id: subCollectionValue
-    //             };
-    //         }
-
-    //         const userData = await JSON.parse(localStorage.getItem('UserData'))
-    //         const userRole = JSON.parse(localStorage.getItem('role_name'));
-           
-    //         if(userRole==='store'){
-    //             params = {
-    //                 role: userRole,
-    //                 storeId: userData?._id
-    //             }; 
-    //         }
-
-    //         const products = await axios.get(`${productBaseURL}/products/get-products`, {
-    //             params: params,
-    //             headers: {
-    //                 Authorization: `${token}`,
-    //             }
-    //         })
-
-    //         const productsData = products?.data?.data
-
-    //         // if (productsData.length > 0) {
-    //         setIsLoading(false)
-    //         setProductsData(productsData.reverse());
-    //         // }
-
-    //     } catch (error) {
-    //         setIsLoading(false)
-    //         console.log(error, 'error from items getting')
-    //     }
-    // }
-
-    // const inactiveItem = async (id) => {
-    //     const token = await JSON.parse(localStorage.getItem("token"))
-    //     try {
-    //         const status = editData.status === "inactive" ? "active" : 'inactive'
-
-    //         let formData = new FormData();
-    //         formData.append('status', status);
-
-    //         const itemsData = await axios.patch(`${baseURL}/products/update-product-status/${editData._id}`, formData, {
-    //             headers: {
-    //                 Authorization: `${token}`,
-    //             }
-    //         })
-
-    //         fetchItems()
-    //         setDeleteModal(!deleteModal)
-    //     }
-    //     catch (err) {
-    //         console.log(err)
-    //     }
-    // }
-    const fetchItems = async () => {
-            setIsLoading(true)
-            const token = await JSON.parse(localStorage.getItem("token"))
-            try {
-                // let params = {};
-                // if (selectedCollectionId) {
-                //     params = {
-                //         category_id: selectedCollectionId
-                //     };
-                // }
-                // if (subCollectionValue) {
-                //     params = {
-                //         subCategory_id: subCollectionValue
-                //     };
-                // }
-    
-                // const userData = await JSON.parse(localStorage.getItem('UserData'))
-                // const userRole = JSON.parse(localStorage.getItem('role_name'));
-               
-                // if(userRole==='store'){
-                //     params = {
-                //         role: userRole,
-                //         storeId: userData?._id
-                //     }; 
-                // }
-    
-                const products = await axios.get(`${baseURL}/api/products`
-                    // , {
-                    // params: params,
-                    // headers: {
-                    //     Authorization: `${token}`,
-                    // }}
-                )
-                // console.log(products, "products");
-
-                // Check if products and products.data exist
-                const productsData = products?.data || []; // Default to an empty array if undefined
-                // console.log(productsData, "osvnisjd");
-                
-                // If you're accessing the length of productsData
-                if (productsData.length > 0) {
-                //   console.log("There are products:", productsData);
-                } else {
-                //   console.log("No products available");
-                }
-                
-                // if (productsData.length > 0) {
-                setIsLoading(false)
-                setProductsData(productsData.reverse());
-                // }
-    
-            } catch (error) {
-                setIsLoading(false)
-                // console.log(error, 'error from items getting')
-            }
+            // Fetch products after categories are set
+            await fetchProducts(1);
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: 'Failed to load initial data!'
+            });
         }
-    // useEffect(() => {
-    //     fetchCategoryList();
-    //     fetchSubcollectionsList();
-    // }, []);
+    }, [token]);
+
+    // Initial Load
+    useEffect(() => {
+        if (token) {
+            fetchInitialData();
+        }
+    }, [token, fetchInitialData]);
+
 
     useEffect(() => {
-        fetchItems();
-    }, [selectedCollectionId, subCollectionValue])
+        const delaySearch = setTimeout(() => {
+            fetchProducts(1, products.perPage, searchTerm);
+        }, 400);
 
-    const handleNavigate = () => {
-        navigate('/product/create')
-    }
+        return () => clearTimeout(delaySearch);
+    }, [searchTerm, products.perPage]);
 
-    const handleNavigateEdit = (id) => {
-        navigate(`/product/edit/${id}`);
-    }
 
-    const handleSearch = (event) => {
-        event.preventDefault();
-        setSearchTerm(event.target.value);
+    const openModal = (type, product = null) => {
+        setModal({
+            isOpen: true,
+            type,
+            selectedProduct: product
+        });
+
+        if (product) {
+            setFormData({
+                productName: product.name || '',
+                price: product.price || '',
+                stock: product.stock || '',
+                quantity: product.quantity || '',
+                // description: product.description || '',
+                categoryId: product.category?._id || '',
+                subCategoryId: product.subCategory?._id || '',
+                image: null, // clear file input
+                imagePreview: product.image ? `${baseURL}${product.image}` : null
+            });
+        } else {
+            resetForm();
+        }
     };
 
-    const handleAll = () => {
-        setBasicTab(1);
-        setSubCollectionValue("");
-        setSelectedCollectionId(null);
-        fetchItems()
+
+    const closeModal = () => {
+        setModal({ isOpen: false, type: 'add', selectedProduct: null });
+        resetForm();
+    };
+    const resetForm = () => {
+        setFormData({
+            productName: '',
+            price: '',
+            stock: '',
+            quantity: '',
+            // description: '',
+            categoryId: '',
+            subCategoryId: '',
+            image: null,
+            imagePreview: null
+        });
+    };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const data = new FormData();
+
+    data.append('name', formData.productName); // ✅ match backend field "name"
+    data.append('main_category', formData.categoryId); // ✅ match backend field "main_category"
+    data.append('category', formData.subCategoryId); // Subcategory (if needed by backend)
+    // if (formData.description) data.append('description', formData.description);
+    data.append('price', formData.price);
+    data.append('quantity', formData.quantity);
+    data.append('stock', formData.stock);
+
+    if (formData.image instanceof File) {
+        data.append('image', formData.image);
     }
 
-    const handleTabs = async (data, index) => {
-        setBasicTab(index + 2);
-        setSelectedCollectionId(data?._id);
-        setSubCollectionValue();
-        // getFilteredData(data?._id, "");
+    try {
+        const endpoint = modal.type === 'add'
+            ? `${baseURL}/api/products`
+            : `${baseURL}/api/products/${modal.selectedProduct._id}`;
+
+        const method = modal.type === 'add' ? 'post' : 'put';
+
+        await axios[method](endpoint, data, {
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+
+        Swal.fire({
+            icon: 'success',
+            title: modal.type === 'add' ? 'Product Added' : 'Product Updated',
+            showConfirmButton: false,
+            timer: 1500,
+        });
+
+        closeModal();
+        fetchProducts(products.currentPage);
+    } catch (error) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: error.response?.data?.message || 'Failed to submit product',
+        });
     }
+};
 
-    const handleSubCollectionChange = (e) => {
-        let value = e.target.value;
-        setSubCollectionValue(value);
-        // getFilteredData("", value);
-    }
 
-    // const getFilteredData = async () => {
-    //     setIsLoading(true);
-    //     try {
-    //         const token = await JSON.parse(localStorage.getItem("token"));
-    //         let params = {};
-    //         if (subCollectionValue) {
-    //             params = {
-    //                 subCategory_id: subCollectionValue
-    //             };
-    //         }
-    //         if (selectedCollectionId) {
-    //             params = {
-    //                 category_id: selectedCollectionId
-    //             };
-    //         }
+    // Delete/Status Change Handler
+    const handleDeleteProduct = async () => {
+        try {
+            await axios.delete(`${baseURL}/api/products/${modal.selectedProduct._id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
 
-    //         const response = await axios.get(`${productBaseURL}/products/get-products`, {
-    //             params: params,
-    //             headers: {
-    //                 Authorization: `${token}`,
-    //             }
-    //         });
+            Swal.fire({
+                icon: 'success',
+                title: 'Product Deleted',
+                showConfirmButton: false,
+                timer: 1500
+            });
 
-    //         if (response?.status === 200 && response) {
-    //             setProductsData(response?.data?.data.reverse());
-    //             console.log(response?.data?.data.reverse())
-    //             setIsLoading(false);
-    //         }
-    //     } catch (error) {
-    //         console.error(error);
-    //         setIsLoading(false);
-    //     }
-    // }
-    // console.log(productsData, "products")
-    // const filteredProducts = productsData.filter(item =>
-    //     item?.productName?.toLowerCase().includes(searchTerm?.toLowerCase()) ||
-    //     item?.description?.toLowerCase().includes(searchTerm?.toLowerCase()) ||
-    //     item?.brand?.brandName?.toLowerCase().includes(searchTerm?.toLowerCase()) ||
-    //     item?.subCategory?.sub_collection_name?.toLowerCase().includes(searchTerm?.toLowerCase()) ||
-    //     item?.tags.some(tag => tag.value.toLowerCase().includes(searchTerm?.toLowerCase()))
-    // );
-
-    const deleteVariant = async (id) => {
-        if (window.confirm(`Are you sure you want to delete this Product ?`)) {
-            try {
-                const token = await JSON.parse(localStorage.getItem("token"))
-                await axios.delete(`${productBaseURL}/products/delete/${id}`, {
-                    headers: {
-                        Authorization: `${token}`,
-                    }
-                }).then((res) => {
-                    Swal.fire({
-                        icon: "success",
-                        title: res?.data?.message,
-                    })
-                    fetchItems();
-                })
-            }
-            catch (err) {
-                console.error(err)
-            }
+            closeModal();
+            fetchProducts(products.currentPage);
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.response?.data?.message || 'Failed to delete product'
+            });
         }
-    }
+    };
 
-    const orderColumns = [
+    const columns = [
         {
-            name: 'Product',
-            selector: row => `${row?._id}`,
-            width: "250px",
-            cell: (row) => (
-                <>
-
-                    <Media className='d-flex'><Image attrImage={{ className: 'img-30 me-3', src: `${row?.variants?.length > 0 ? imageURL + row?.variants[0].variantImage : dummyImg}`, alt: 'Generic placeholder image' }} />
-                        <Media body className="align-self-center">
-                            <div className='ellipses_text_1'>{row?.productName}</div>
-                        </Media>
-                    </Media>
-                </>
+            name: 'Image',
+            selector: row => row.image,
+            center: true,
+            cell: row => (
+                <img
+                    src={row.image?.startsWith('/uploads') ? `${baseURL}${row.image}` : row.image}
+                    alt={row.productName}
+                    style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '6px' }}
+                />
             ),
-            center: true,
         },
         {
-            name: 'Category Name',
-            selector: row => row?.category?.name.toUpperCase(),
-            center: true,
-            cell: (row) => (
-                row?.category?.name.toUpperCase()
-            )
-        },
-        // {
-        //     name: 'Sub Category',
-        //     selector: row => row?.subCategory?.sub_collection_name.toUpperCase(),
-        //     center: true,
-        //     // width: "100px",
-        //     cell: (row) => (
-        //         row?.subCategory?.sub_collection_name.toUpperCase()
-        //     )
-        // },
-        {
-            name: 'Tags',
-            selector: row => row?.tag?.split(',').map(singleTag => singleTag.trim()).join(', '), // Split by comma, trim extra spaces, and join back as a string
-            width: "270px",
-            headerStyle: (selector, id) => {
-                return { textAlign: "left" };
-            },
-            cell: (row) => {
-                const { tag } = row;
-                const MAX_DISPLAY_TAGS = 2;
-                const tagsArray = tag?.split(',').map(singleTag => singleTag.trim()) || []; // Split the string into an array and trim spaces
-        
-                if (tagsArray.length > MAX_DISPLAY_TAGS) {
-                    const pendingItemsCount = tagsArray.length - MAX_DISPLAY_TAGS;
-                    return (
-                        <>
-                            {tagsArray.slice(0, MAX_DISPLAY_TAGS).map((singleTag, index) => (
-                                <span key={index} style={{ border: "1px dashed #E1E6EF", padding: "10px 10px", borderRadius: "10px", marginRight: "5px" }}>
-                                    {singleTag}
-                                </span>
-                            ))}
-                            <span style={{ border: "1px dashed #E1E6EF", padding: "10px 10px", borderRadius: "10px", marginRight: "5px" }}>
-                                + {pendingItemsCount}
-                            </span>
-                        </>
-                    );
-                } else {
-                    return (
-                        <>
-                            {tagsArray.map((singleTag, index) => (
-                                <span key={index} style={{ border: "1px dashed #E1E6EF", padding: "10px 10px", borderRadius: "10px", marginRight: "5px" }}>
-                                    {singleTag}
-                                </span>
-                            ))}
-                        </>
-                    );
-                }
-            },
-            center: false,
+            name: 'Product Name',
+            selector: row => row.name,
+            sortable: true,
         },
         {
-            name: 'Description',
-            selector: row => `${row?.description.slice(0, 100)}`,
-            width: "250px",
-            cell: (row) => {
-                const description = row?.description;
-                const maxLength = 50;
-
-                if (description && description.length > maxLength) {
-                    return (
-                        <>{description.slice(0, maxLength)}...</>
-                    );
-                } else {
-                    return (
-                        <>{description}</>
-                    );
-                }
-            },
-            center: true,
+            name: 'Category',
+            selector: row => row.main_category?.name || 'N/A',
+            sortable: true,
         },
         {
-            name: 'Unit Quantity',
-            selector: row => `${row.unitQuantity}`,  // Access the uniqueQuantity field from the row
+            name: 'Sub Category',
+            selector: row => row.category?.name || 'N/A',
+            sortable: true,
+        },
+        {
+            name: 'Price (₹)',
+            selector: row => row.price,
             sortable: true,
             center: true,
-            width: "90px",
-            cell: (row) => (
-                <span style={{ fontSize: '13px' }} className={`badge ${row.unitQuantity === 0 ? 'badge-light-danger' : 'badge-light-success'}`}>
-                    {row.unitQuantity} {/* Display the uniqueQuantity */}
-                </span>
-            ),
         },
-        
-
+        {
+            name: 'Stock',
+            selector: row => row.stock,
+            sortable: true,
+            center: true,
+        },
+        {
+            name: 'Quantity',
+            selector: row => row.quantity,
+            sortable: true,
+            center: true,
+        },
+        // {
+        //     name: 'Description',
+        //     selector: row => row.description,
+        //     sortable: false,
+        //     wrap: true,
+        // },
+        {
+            name: 'Created Date',
+            selector: row => moment(row.createdAt).format('DD/MM/YYYY'),
+            sortable: true,
+            center: true,
+        },
         {
             name: 'Actions',
             cell: (row) => (
-                <div className='d-flex justify-content-end align-items-center' style={{ marginRight: '20px' }}>
-                    <div
-                        className='cursor-pointer'
+                <div className="d-flex">
+                    <Button
+                        size="sm"
+                        className="me-2"
+                        onClick={() => openModal('edit', row)}
                     >
-                        <UncontrolledDropdown className='action_dropdown'>
-                            <DropdownToggle className='action_btn'
-                            >
-                                <MoreVertical color='#000' size={16} />
-                            </DropdownToggle>
-                            <DropdownMenu>
-                                <DropdownItem onClick={() => handleNavigateEdit(row?._id)}>
-                                    Edit
-                                    <FaPen />
-                                </DropdownItem>
-                                <DropdownItem className='delete_item' onClick={() => deleteVariant(row?._id)}>
-                                    Delete
-                                    <FaTrashAlt />
-                                </DropdownItem>
-                            </DropdownMenu>
-                        </UncontrolledDropdown>
-                    </div>
-
-                    {/* <div
-                        onClick={() => {
-                            seteditdata(row)
-                            setDeleteModal(!deleteModal)
-                        }}
-                        className='rounded-2' style={{ cursor: 'pointer', border: '1px solid #ff0000', padding: '5px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                        <Trash2 color='#ff0000' size={16} />
-                    </div> */}
+                        <Edit size={14} />
+                    </Button>
+                    {userRole === 'Admin' && (
+                        <Button
+                            size="sm"
+                            onClick={() => openModal('delete', row)}
+                        >
+                            <Trash2 size={14} />
+                        </Button>
+                    )}
                 </div>
             ),
-            right: true,
-            omit: userRole !== 'admin'
+            ignoreRowClick: true,
+            allowOverflow: true,
+            button: true,
         }
+    ];
 
-    ]
 
-    // function capitalizeFirstLetter(string) {
-    //     return string.charAt(0).toUpperCase() + string.slice(1);
-    // }
+    const filteredSubCategories = useMemo(() => {
+        return subCategories.filter(
+            sub => sub?.main_category?._id === formData.categoryId
+        );
+    }, [subCategories, formData.categoryId]);
 
-    const uploadCSV = async (selectedFile) => {
-        setIsLoading(true);
-        const token = await JSON.parse(localStorage.getItem("token"));
-        try {
-            const formData = new FormData();
-            formData.append("csv", selectedFile);
-            const res = await axios.post(`${baseURL}/api/csv/import-from-csv
-            `, formData, {
-                headers: {
-                    Authorization: `${token}`,
-                }
-            });
-            if (res) {
-                fetchItems();
-                setIsLoading(false);
-            }
-        } catch (error) {
-            // console.log(error);
-            setIsLoading(false);
+
+
+    const filteredProducts = (products.data || []).filter(item =>
+        (item.productName || '').toLowerCase().includes((searchTerm || '').toLowerCase())
+    );
+
+
+    const handleImageUpload = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setFormData((prev) => ({
+                ...prev,
+                image: file,
+                imagePreview: URL.createObjectURL(file),
+            }));
         }
-    }
-// console.log(collectionData,'json');
+    };
+
+
+
     return (
-        <Fragment>
-        <Row xxl={12} className='pb-2'>
-            <Row>
-                <Col md={12} lg={12} xl={12} xxl={12}>
-                    <div>
-                        <Nav tabs className='product_variant_tabs mb-3'>
-                            <NavItem>
-                                <NavLink className={BasicTab === 1 ? 'active' : ''} onClick={() => handleAll()}>
-                                    All Products
-                                </NavLink>
-                            </NavItem>
-                            {
-                                // Ensure collectionData is defined and has data
-                                Array.isArray(collectionData) && collectionData.length > 0 && (
-                                    collectionData.sort((a, b) =>
-                                        a.collection_name.localeCompare(b.collection_name)
-                                    ).slice(0, 20).map((data, index) => {
-                                        return (
-                                            <NavItem key={data?._id}>
-                                                <NavLink className={BasicTab === (index + 2) ? 'active' : ''} onClick={() => handleTabs(data, index)}>
-                                                    {data.collection_name}
-                                                </NavLink>
-                                            </NavItem>
-                                        )
-                                    })
-                                )
-                            }
-                        </Nav>
-                    </div>
-                </Col>
-                <Col md={12} lg={12} xl={12} xxl={12}>
-                    <div className="file-content file-content1 justify-content-between">
-                        <div className='mb-0 form-group position-relative search_outer d-flex align-items-center'>
-                            <i className='fa fa-search' style={{ top: 'unset' }}></i>
-                            <input className='form-control border-0' value={searchTerm} onChange={(e) => handleSearch(e)} type='text' placeholder='Search...' />
-                        </div>
-                        <div className='d-flex'>
-                            <Input type='select' className='ms-3' name='subCategory' value={subCollectionValue} onChange={(e) => handleSubCollectionChange(e)} >
-                                <option value=''>Select Sub Category</option>
-                                {
-                                    // Ensure subCollectionData is defined and has data
-                                    Array.isArray(subCollectionData) && subCollectionData.length > 0 && selectedCollectionId ? (
-                                        subCollectionData.filter((item) => item?.collection_id?._id === selectedCollectionId).map((data) => {
-                                            return (
-                                                <option key={data?._id} value={data?._id}>{data?.sub_collection_name}</option>
-                                            );
-                                        })
-                                    ) : (
-                                        Array.isArray(subCollectionData) && subCollectionData.length > 0 && subCollectionData.map((data) => {
-                                            return (
-                                                <option key={data?._id} value={data?._id}>{data?.sub_collection_name}</option>
-                                            );
-                                        })
-                                    )
-                                }
-                            </Input>
-                            {
-                                userRole === 'admin' && <Button className='btn btn-primary d-flex align-items-center ms-3' onClick={handleNavigate}>
-                                    <PlusCircle />
-                                    Add Product
-                                </Button>
-                            }
-                            {
-                                userRole === 'admin' &&
-                                <Label htmlFor='csv' className='btn mb-0 btn-primary d-flex align-items-center ms-3 btn btn-secondary'>
-                                    <Input
-                                        id='csv'
-                                        type='file'
-                                        accept=".zip"
-                                        className='d-none'
-                                        onChange={(e) => uploadCSV(e.target.files[0])}
-                                    />
-                                    <Upload />
-                                    Import via ZIP
-                                </Label>
-                            }
-    
-                        </div>
+        <div>
+            {/* Header and Search */}
+            <Row className="mb-3">
+                <Col className="d-flex justify-content-between align-items-center">
+                    <h4>Products</h4>
+                    <div className="d-flex align-items-center">
+                        <input
+                            type="text"
+                            className="form-control me-2"
+                            placeholder="Search products..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            style={{ width: '200px' }}
+                        />
+                        {userRole === 'admin' && (
+                            <Button
+                                className='btn btn-primary d-flex align-items-center'
+                                onClick={() => openModal('add')}
+                            >
+                                <PlusCircle size={16} className="me-1" /> Add Product
+                            </Button>
+                        )}
                     </div>
                 </Col>
             </Row>
-        </Row>
-    
-        <DataTable
-            data={productsData || []}
-            columns={orderColumns}
-            pagination
-            onSelectedRowsChange={handleRowSelected}
-            clearSelectedRows={toggleDelet}
-            progressPending={isLoading}
-            progressComponent={<Loader />}
-        />
-    </Fragment>
-    
-    )
-}
-export default ItemsTable
+
+            {/* Data Table */}
+            <DataTable
+                columns={columns}
+                data={filteredProducts}
+                progressPending={products.loading}
+                progressComponent={<Loader />}
+                pagination
+                paginationServer
+                paginationTotalRows={products.totalRows}
+                onChangePage={(page) => fetchProducts(page, products.perPage, searchTerm)}
+                onChangeRowsPerPage={(newPerPage, page) => fetchProducts(page, newPerPage, searchTerm)}
+            />
+
+
+            {/* Modal for Add/Edit Product */}
+            <Modal centered isOpen={modal.isOpen && ['add', 'edit'].includes(modal.type)} toggle={closeModal} className="store_modal">
+                <ModalHeader toggle={closeModal}>
+                    {modal.type === 'add' ? 'Add Product' : 'Edit Product'}
+                </ModalHeader>
+                <ModalBody>
+                    <Form onSubmit={handleSubmit}>
+                        <FormGroup>
+                            <Label>Category<span className="text-danger">*</span></Label>
+                            <Input
+                                type="select"
+                                value={formData.categoryId}
+                                onChange={(e) =>
+                                    setFormData((prev) => ({
+                                        ...prev,
+                                        categoryId: e.target.value,
+                                        subCategoryId: '' // reset subcategory when category changes
+                                    }))
+                                }
+                                required
+                            >
+                                <option value="">Select Category</option>
+                                {categories.map((cat) => (
+                                    <option key={cat._id} value={cat._id}>
+                                        {cat.name}
+                                    </option>
+                                ))}
+                            </Input>
+                        </FormGroup>
+
+
+                        <FormGroup>
+                            <Label>Sub Category<span className="text-danger">*</span></Label>
+                            <Input
+                                type="select"
+                                value={formData.subCategoryId}
+                                onChange={(e) =>
+                                    setFormData((prev) => ({
+                                        ...prev,
+                                        subCategoryId: e.target.value,
+                                    }))
+                                }
+                                disabled={!formData.categoryId}
+                                required
+                            >
+                                <option value="">Select Sub Category</option>
+                                {filteredSubCategories.map((subCat) => (
+                                    <option key={subCat._id} value={subCat._id}>
+                                        {subCat.name}
+                                    </option>
+                                ))}
+                            </Input>
+                        </FormGroup>
+
+
+                        <FormGroup>
+                            <Label>Product Name<span className="text-danger">*</span></Label>
+                            <Input
+                                type="text"
+                                value={formData.name}
+                                onChange={(e) =>
+                                    setFormData((prev) => ({
+                                        ...prev,
+                                        productName: e.target.value,
+                                    }))
+                                }
+                                required
+                            />
+                        </FormGroup>
+
+                        <FormGroup>
+                            <Label>Quantity<span className="text-danger">*</span></Label>
+                            <Input
+                                type="number"
+                                value={formData.quantity}
+                                onChange={(e) =>
+                                    setFormData((prev) => ({
+                                        ...prev,
+                                        quantity: e.target.value,
+                                    }))
+                                }
+                                required
+                            />
+                        </FormGroup>
+
+                        <FormGroup>
+                            <Label>Price<span className="text-danger">*</span></Label>
+                            <Input
+                                type="number"
+                                value={formData.price}
+                                onChange={(e) =>
+                                    setFormData((prev) => ({
+                                        ...prev,
+                                        price: e.target.value,
+                                    }))
+                                }
+                                required
+                            />
+                        </FormGroup>
+
+                        <FormGroup>
+                            <Label>Stock<span className="text-danger">*</span></Label>
+                            <Input
+                                type="number"
+                                value={formData.stock}
+                                onChange={(e) =>
+                                    setFormData((prev) => ({
+                                        ...prev,
+                                        stock: e.target.value,
+                                    }))
+                                }
+                                required
+                            />
+                        </FormGroup>
+
+                        {/* <FormGroup>
+                            <Label>Description</Label>
+                            <Input
+                                type="textarea"
+                                value={formData.description}
+                                onChange={(e) =>
+                                    setFormData((prev) => ({
+                                        ...prev,
+                                        description: e.target.value,
+                                    }))
+                                }
+                            />
+                        </FormGroup> */}
+
+                        <FormGroup>
+                            <Label>Image<span className="text-danger">*</span></Label>
+                            <Input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleImageUpload}
+                                required={modal.type === 'add'}
+
+
+                            />
+                            {formData.imagePreview && (
+                                <img
+                                    src={formData.imagePreview}
+                                    alt="Preview"
+                                    className="mt-2"
+                                    style={{ maxWidth: '120px', borderRadius: '8px' }}
+                                />
+                            )}
+                        </FormGroup>
+
+                        <Row className="text-center">
+                            <Button type="submit">
+                                {modal.type === 'add' ? 'Add Product' : 'Update Product'}
+                            </Button>
+                        </Row>
+                    </Form>
+                </ModalBody>
+            </Modal>
+
+            {/* Modal for Delete Confirmation */}
+            <Modal centered isOpen={modal.isOpen && modal.type === 'delete'} toggle={closeModal}>
+                <ModalHeader toggle={closeModal}>Delete Product</ModalHeader>
+
+                <Container>
+                    <div className="text-center mb-4">
+
+                        <h5>Are you sure you want to delete this product <span className='font-danger'>{modal?.selectedProduct?.productName}</span>?</h5>
+                        <p className="text-muted">
+                            {/* {modal.selectedProduct.productName} */}
+                        </p>
+                        <p className="text-danger">
+                            This action cannot be undone.
+                        </p>
+                        <Row className="text-center">
+                            <Col xs={6}>
+                                <Button
+                                    type="button"
+                                    className="btn btn-secondary w-100"
+                                    onClick={closeModal}
+                                >
+                                    Cancel
+                                </Button>
+                            </Col>
+                            <Col xs={6}>
+                                <Button
+                                    type="button"
+                                    className="btn btn-danger w-100"
+                                    onClick={handleDeleteProduct}
+
+                                >
+                                    Confirm Delete
+                                </Button>
+                            </Col>
+                        </Row>
+                    </div>
+
+                    {/* <ModalFooter>
+                    <Button color="danger" onClick={handleDeleteProduct}>
+                        Confirm Delete
+                    </Button>
+                    <Button color="secondary" onClick={closeModal}>
+                        Cancel
+                    </Button>
+                </ModalFooter> */}
+                </Container>
+            </Modal>
+        </div>
+    );
+};
+
+export default ProductsTable;
