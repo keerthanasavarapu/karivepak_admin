@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
-import { baseURL } from "../Services/api/baseURL";
+import { baseURL } from "../../Services/api/baseURL"; // Corrected import path
 
 // Async thunk to fetch main categories
 export const fetchMainCategories = createAsyncThunk(

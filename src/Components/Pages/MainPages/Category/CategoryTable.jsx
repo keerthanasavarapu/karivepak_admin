@@ -31,6 +31,7 @@ const CategoryTable = () => {
 
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [selectedCategory, setSelectedCategory] = useState(null);
+    const [loading, setLoading] = useState(false); // Define setLoading using useState
     const [formData, setFormData] = useState({
         name: '',
         status: 'active',
@@ -46,7 +47,7 @@ const CategoryTable = () => {
 console.log(metaData,"metaData")
 
     const dispatch = useDispatch();
-    const { categories, totalRows, loading } = useSelector(state => state.category); // Adjust selector as per your reducer
+    const { categories, totalRows /* removed loading from here */ } = useSelector(state => state.maincategory); // Adjusted selector and removed loading
 
     const [pagination, setPagination] = useState({
         page: 1,
@@ -56,7 +57,7 @@ console.log(metaData,"metaData")
 
     // Fetch categories using Redux
     useEffect(() => {
-        dispatch(fetchCategories(pagination.page, pagination.perPage));
+        dispatch(fetchMainCategories(pagination.page, pagination.perPage)); // Use fetchMainCategories
         // eslint-disable-next-line
     }, [dispatch, pagination.page, pagination.perPage]);
 
@@ -174,7 +175,7 @@ console.log(metaData,"metaData")
             }
 
             toggleModal();
-            dispatch(fetchCategories(pagination.page, pagination.perPage));
+            dispatch(fetchMainCategories(pagination.page, pagination.perPage)); // Use fetchMainCategories
         } catch (error) {
             console.error('Error submitting category:', error);
             Swal.fire({
@@ -208,7 +209,7 @@ const handleMetaSubmit=async(e)=>{
                 });
                 console.log(response,"reponse of meta");
                 toggleMetaModal();
-        dispatch(fetchCategories(pagination.page, pagination.perPage));
+        dispatch(fetchMainCategories(pagination.page, pagination.perPage));
     } catch (error) {
                     console.error('Error submitting category:', error);
             Swal.fire({
@@ -270,7 +271,7 @@ const handleMetaSubmit=async(e)=>{
             });
 
             toggleDeleteModal();
-            dispatch(fetchCategories(pagination.page, pagination.perPage));
+            dispatch(fetchMainCategories(pagination.page, pagination.perPage)); // Use fetchMainCategories
         } catch (error) {
             console.error('Error deleting category:', error);
             Swal.fire({
