@@ -40,7 +40,7 @@ const Signin = ({ selected }) => {
       console.log(obj,"inside")
       // const endPoint = loginType === 'Admin' ? '/admin/login' : '/store/store-login';
       // const postuser = await axios.post(`${baseURL}/api${endPoint}`, obj)
-      const postuser = await axios.post(`${baseURL}/api/admin/login`,obj)
+      const postuser = await axios.post(`${baseURL}/api/auth/login`,obj)
       console.log(postuser,"clicked login")
       toast.success("Successfully logged in!..");
       const token = postuser.data.token;

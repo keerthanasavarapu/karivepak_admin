@@ -1,7 +1,7 @@
 
 // LIVE URL
 // export const baseURL = 'https://devapigobooze.codefactstech.com/admin';
-export const baseURL = 'http://localhost:4001'
+export const baseURL = 'http://localhost:5000'
 
 export const productBaseURL = "https://devapigobooze.codefactstech.com/product/v1";
 export const variantsBaseURL = "https://devapigobooze.codefactstech.com/product/v1/variants";

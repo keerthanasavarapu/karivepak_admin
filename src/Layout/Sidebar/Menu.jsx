@@ -10,12 +10,42 @@ export const MENUITEMS = [
         active: true,
         path: `/dashboard`
       },
-      {
-        title: 'Industries',
-        icon: 'order',
-        type: 'link',
+      // {
+      //   title: 'Industries',
+      //   icon: 'order',
+      //   type: 'link',
+      //   active: false,
+      //   path: `/industries`
+      // },
+       {
+        title: 'Products',
+        icon: 'product',
         active: false,
-        path: `/industries`
+        type: "sub",
+        path: ``,
+        badge: "badge badge-light-danger",
+        children: [
+          { path: `/category`, title: "Category", type: "link" },
+          { path: `/sub-category`, title: "Sub-Category", type: "link" },
+          { path: `/products`, title: "Products", type: "link" },
+          // { path: `/variants`, title: "Variants", type: "link" },
+        ],
+        
+      },
+
+       {
+        title: 'Orders',
+        icon: 'order',
+        active: false,
+        type: "sub",
+        path: ``,
+        badge: "badge badge-light-danger",
+        children: [
+          { path: `/orders`, title: "Orders", type: "link" },
+          { path: `/return-orders`, title: "Return-orders", type: "link" },
+         
+        ],
+        // roles: ['Admin','Renter']
       },
       // {
       //   title: 'vendors',
@@ -61,13 +91,13 @@ export const MENUITEMS = [
       //     { path: `/sub-collections`, title: "Sub-Collections", type: "link" },
       //     { path: `/variants`, title: "Variants", type: "link" },
 
-      //     // { path: `/items`, title: "Items", type: "link" },
-      //     // {
-      //     //   path: `/products`, title: "Products", type: "link"
-      //     // },
-      //     // { path: `/stocks`, title: "Stocks", type: "link" },
+      //     { path: `/items`, title: "Items", type: "link" },
+      //     {
+      //       path: `/products`, title: "Products", type: "link"
+      //     },
+      //     { path: `/stocks`, title: "Stocks", type: "link" },
       //   ],
-      //   roles: ['store']
+      //   // roles: ['store']
       // },
       // {
       //   title: 'Variants',
@@ -83,18 +113,18 @@ export const MENUITEMS = [
       //   active: false,
       //   path: `/brands`
       // },
+      // {
+      //   title: 'Products',
+      //   icon: 'transaction',
+      //   type: 'link',
+      //   active: false,
+      //   path: `/products`
+      // },
       {
-        title: 'Products',
-        icon: 'transaction',
-        type: 'link',
-        active: false,
-        path: `/products`
-      },
-      {
-        title: "Services",
-        icon: "store",
-        type: "link",
-        path: `/services`,
+        // title: "Services",
+        // icon: "store",
+        // type: "link",
+        // path: `/services`,
         // badge: "badge badge-light-danger",
         // badgetxt: "6",
         active: false,
@@ -105,15 +135,29 @@ export const MENUITEMS = [
         //   { path: `/subcollections`, title: "Sub Collections", type: "link" },
         // ],
       },
-      {
-        title: "Promotions",
-        icon: "store",
-        type: "link",
-        path: `/Promotions`,
-        // badge: "badge badge-light-danger",
-        active: false,
+      // {
+      //   title: "Promotions",
+      //   icon: "store",
+      //   type: "link",
+      //   path: `/Promotions`,
+      //   badge: "badge badge-light-danger",
+      //   active: false,
         
-        // roles: ['store'],
+      //   // roles: ['store'],
+      // },
+        {
+        title: 'Users',
+        icon: 'customer',
+        active: false,
+        type: "sub",
+        path: ``,
+        badge: "badge badge-light-danger",
+        children: [
+          { path: `/users`, title: "Users", type: "link" },
+          { path: `/delivery-person`, title: "Delivery-Person", type: "link" },
+          // { path: `/business-info`, title: "Business Info", type: "link" },
+        ],
+        // roles: ['Admin']
       },
       {
         title: "Posts",

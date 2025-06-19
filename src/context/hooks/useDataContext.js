@@ -37,6 +37,11 @@ export const DataContextProvider = ({ children }) => {
         changeCategoryData(data);
     }
 
+    const maincategory = (data)=>{
+        const categoryData = data.filter((item) => item.parent === null);
+        changeCategoryData(categoryData);
+    }
+
     return (
         <DataContext.Provider
             value={{
@@ -51,7 +56,8 @@ export const DataContextProvider = ({ children }) => {
                 dashboardTopProducts,
                 setDashboardTopProducts,
                 categoryData,
-                setCategoryData
+                setCategoryData,
+                maincategory
             }}
         >
             {children}

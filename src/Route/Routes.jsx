@@ -5,6 +5,9 @@ import Transactions from '../Components/Pages/MainPages/Transactions'
 // import Statistics from '../Components/Pages/MainPages/Statistics'
 import Statistics from '../Components/Pages/MainPages/Statistics';
 import Customers from '../Components/Pages/MainPages/Customers';
+import Category from '../Components/Pages/MainPages/Category/Index';
+import SubCategories from '../Components/Pages/MainPages/SubCategories/SubCategories';
+import Users from '../Components/Pages/MainPages/Users';
 // import LogActivity from '../Components/Pages/MainPages/LogActivity'
 // import Settings from '../Components/Pages/MainPages/Settings';
 import Help from '../Components/Pages/MainPages/Help';
@@ -22,6 +25,7 @@ import Brands from '../Components/Pages/MainPages/Brands';
 import CreateProduct from '../Components/Pages/MainPages/Products/create';
 import Variants from '../Components/Pages/MainPages/Variants/Variants';
 import Orders from '../Components/Pages/MainPages/Orders/Index';
+import ReturnOrders from '../Components/Pages/MainPages/ReturnOrders';
 import Promotions from '../Components/Pages/MainPages/Promotions/Index'
 import ErrorPage4 from '../Components/Pages/ErrorPages/ErrorPage404';
 import ViewOrder from '../Components/Pages/MainPages/Orders/view';
@@ -55,9 +59,17 @@ let routes = [
   // Order Route Start
   { path: `/orders`, Component: <Orders /> },
   { path: `/orders/:id`, Component: <ViewOrder /> },
+  
+  { path: `/return-orders`, Component: <ReturnOrders/> },
+  // { path: `/orders/suborder/:id`, Component: <SubOrderDetail /> },
+  // { path: `/return-orders/suborder/:id`, Component: <SubOrderDetails /> },
+
+
 
   // Product Route Start
   { path: `/products`, Component: <Products /> },
+  { path: `/category`, Component: <Category /> },
+  { path: `/sub-category`, Component: <SubCategories /> },
   { path: '/product/create', Component: <CreateProduct /> },
   { path: '/product/edit/:id', Component: <CreateProduct /> },
 
@@ -68,7 +80,8 @@ let routes = [
   { path: `/services`, Component: <Services /> },
 
   // promotion route start
-  { path: `/promotions`, Component: <Promotions /> },
+  // { path: `/promotions`, Component: <Promotions /> },
+   { path: `/users`, Component: <Users /> },
   // post route start
 { path: `/posts`, Component: <Posts /> },
   // Stock Route Start 

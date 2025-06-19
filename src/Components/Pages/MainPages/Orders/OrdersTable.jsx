@@ -1,840 +1,825 @@
-import React, {
-  Fragment,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import React, { Fragment, useState, useEffect } from "react";
 import DataTable from "react-data-table-component";
-import { Btn, H4, H5 } from "../../../../AbstractElements";
-import { tableColumns, orderColumns, products } from "./data";
+import { H4 } from "../../../../AbstractElements";
 import {
   Button,
   Col,
   Container,
+  DropdownItem,
+  DropdownMenu,
+  DropdownToggle,
   Form,
   FormGroup,
   Input,
   Label,
-  Pagination,
-  PaginationItem,
-  Row,
-  Nav,
-  NavItem,
-  NavLink,
-} from "reactstrap";
-import CommonModal from "../../../UiKits/Modals/common/modal";
-// import ExcelExport from 'react-data-export';
-// import * as XLSX from 'xlsx';
-import {
-  DropdownItem,
-  DropdownMenu,
-  DropdownToggle,
   Media,
+  Row,
   UncontrolledDropdown,
+  Badge,
+  Nav, NavItem, NavLink
 } from "reactstrap";
-import { MoreVertical, Trash2 } from "react-feather";
-import { FaDownload, FaRegEye, FaTrashAlt } from "react-icons/fa";
-import { useNavigate } from "react-router";
+import { Eye, MoreVertical, Truck, AlertCircle } from "react-feather";
+import CommonModal from "../../../UiKits/Modals/common/modal";
 import axios from "axios";
-import { baseURL, orderURL } from "../../../../Services/api/baseURL";
 import moment from "moment";
-import Loader from "../../../Loader/Loader";
-import { debounce } from "lodash";
 import Swal from "sweetalert2";
-import { useFormik } from "formik";
-import * as Yup from "yup";
+import { baseURL } from "../../../../Services/api/baseURL";
+import Loader from "../../../Loader/Loader";
+import DatePicker from 'react-datepicker';
+import { useNavigate } from "react-router";
+import { format } from 'date-fns';
+import 'react-datepicker/dist/react-datepicker.css';
 
-const DataTableComponent = () => {
-  const navigate = useNavigate();
-  const userRole = JSON.parse(localStorage.getItem("role_name"));
-  const [selectedRows, setSelectedRows] = useState([]);
-  const [orderData, setOrderData] = useState([])
-  const [toggleDelet, setToggleDelet] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [data, setData] = useState(products);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [showModal, SetShowmodal] = useState(false);
-  const [file, setFile] = useState({});
-  const fileInputRef = useRef(null);
-  const [fileData, setFileData] = useState([]);
-  const [addExcel, setAddExcel] = useState(false);
-  const [totalRows, setTotalRows] = useState(0);
-  const [perPage, setPerPage] = useState(10);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [searchText, setSearchText] = useState('');
-  const [orderId, setOrderId] = useState('');
-  const [statusValue, setStatusValue] = useState('')
-  const [showOrderCancellationPopup, setShowOrderCancellationPopup] = useState(false);
-  const [cancelReason, setCancelReason] = useState('');
-  const [BasicTab, setBasicTab] = useState(4);
 
-  const handleTab = (step) => {
-    setBasicTab(step);
-  };
-
-  const formik = useFormik({
-    initialValues: {
-      cancel_reason: "",
-    },
-    validationSchema: Yup.object({
-      cancel_reason: Yup.string().required(
-        "Please Enter Reason for Order Cancellation"
-      ),
-    }),
-    onSubmit: async (values) => {
-      const token = await JSON.parse(localStorage.getItem("token"));
-      let body = {
-        order_status: statusValue,
-        cancel_reason: formik.values.cancel_reason,
-      };
-      if (body.order_status === "") {
-        return Swal.fire({
-          icon: "error",
-          title: "Provide Order Status",
-        });
-      }
-      try {
-        await axios
-          .patch(`${orderURL}/update-order-status/${orderId}`, body, {
-            headers: {
-              Authorization: `${token}`,
-            },
-          })
-          .then((res) => {
-            if (res && res.status === 200) {
-              Swal.fire({
-                icon: "success",
-                title: res?.data?.message,
-              });
-              //SetShowmodal(false);
-              setShowOrderCancellationPopup(false);
-              setOrderId("");
-              setStatusValue("");
-              formik.setFieldValue("cancel_reason", "");
-              getOrderData();
-            }
-          });
-      } catch (err) {
-        console.error(err);
-      }
-    },
+const OrderTable = () => {
+  const token = JSON.parse(localStorage.getItem("token"));
+  const [orderData, setOrderData] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    perPage: 10,
+    totalRows: 0,
   });
 
-  const addmodalExcel = () => setAddExcel(!addExcel);
+  const [showDeliveryModal, setShowDeliveryModal] = useState(false);
+  console.log(showDeliveryModal, "showDeliveryModal");
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [selectedSubOrder, setSelectedSubOrder] = useState(null);
+  const [activeTab, setActiveTab] = useState('placed');
+  const [activeTabs, setActiveTabs] = useState('day');
+  const [startDate, setStartDate] = useState(new Date());
+  const [formattedStartDate, setFormattedStartDate] = useState(format(new Date(), 'MMM yyyy'));
+  console.log(startDate, "startDate")
+  const [selectedDeliveryPerson, setSelectedDeliveryPerson] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState("");
+  const [cancelReason, setCancelReason] = useState("");
+  const [deliveryPersons, setDeliveryPersons] = useState([]);
+  const navigate = useNavigate();
 
-  const getOrderData = async () => {
-    setIsLoading(true);
+  const handleTabClick = (tab) => {
+    setActiveTab(tab);
+  };
+  const handleTabClicks = (tab) => {
+    setActiveTabs(tab);
+  };
 
-    let startDate, endDate;
-    const tab=BasicTab;
-  
-      switch (tab) {
-        case 1: // Today
-          startDate = moment().startOf('day');
-          endDate = moment().endOf('day');
-          break;
-        case 2: // Weekly
-          startDate = moment().startOf('week');
-          endDate = moment().endOf('week');
-          break;
-        case 3: // Monthly
-          startDate = moment().startOf('month');
-          endDate = moment().endOf('month');
-          break;
-        case 4: // Be default ALL, no date condition.
-        startDate = null;
-        endDate = null;
-          break;
-        default:
-          startDate = null;
-          endDate = null;
-          break;
-      }
 
+  const fetchOrders = async (page) => {
+    console.log(formattedStartDate, "formattedDate")
+    setLoading(true);
     try {
-      const token = await JSON.parse(localStorage.getItem("token"));
-      const userData = await JSON.parse(localStorage.getItem("UserData"));
-      let url =
-        userRole !== "admin"
-          ? `${baseURL}/api/dashboard/get-orders-with-status?storeId=${userData?._id}&search_string=${searchTerm}`
-          : `${baseURL}/api/dashboard/get-orders-with-status?search_string=${searchTerm}`;
-        let params= {};
-          if(startDate !==null && endDate !==null) {
-              params={  
-                start_date: moment(startDate).format("YYYY-MM-DD"),
-                end_date: moment(endDate).format("YYYY-MM-DD")
-              }           
+      const response = await axios.get(`${baseURL}/api/orders/filter`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        params: {
+          month: String(formattedStartDate),
+          period: String(activeTabs),
+          status: String(activeTab)
         }
-
-      await axios
-        .get(url, {
-          params: params,
-          headers: {
-            Authorization: `${token}`,
-          },
-        })
-        .then((res) => {
-          if (res?.data?.success && res) {
-            setOrderData(res?.data?.data);
-            setIsLoading(false);
-          }
-        });
-    } catch (error) {
-      setIsLoading(false);
-      console.error(error);
-    }
-  };
-
-  const toggleModal = () => {
-    setOrderId("");
-    SetShowmodal(!showModal);
-  };
-
-  const toggleCancelOrderModal = () => {
-    formik.resetForm();
-    setOrderId("");
-    setShowOrderCancellationPopup(!showOrderCancellationPopup);
-  };
-
-  const debouncedSearch = React.useRef(
-    debounce(async (searchTerm) => {
-      setSearchText(searchTerm);
-    }, 300)
-  ).current;
-
-  const handleSearch = (event) => {
-    setSearchTerm(event.target.value);
-    debouncedSearch(event.target.value);
-  };
-
-  const handleRowSelected = useCallback((state) => {
-    setSelectedRows(state.selectedRows);
-  }, []);
-
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
-
-  const handlePerRowsChange = async (newPerPage, page) => {
-    setPerPage(newPerPage);
-  };
-
-  const handleNavigate = (id) => {
-    navigate(`/orders/${id}`);
-  };
-
-  // downloadInvoice(orderId)
-  const downloadInvoice = async (orderId) => {
-    try {
-      const response = await axios.get(`${orderURL}/invoice-pdf/${orderId}`, {
-        responseType: "blob",
       });
+      console.log(response.data, "response of orders")
 
-      const blob = new Blob([response.data], { type: "application/pdf" });
-      const link = document.createElement("a");
-      link.href = window.URL.createObjectURL(blob);
-      link.download = `invoice-${orderId}.pdf`;
-      link.click();
+      if (Array.isArray(response?.data?.orders)) {
+        setOrderData(response?.data?.orders);
+        setPagination(prev => ({
+          ...prev,
+          totalRows: response?.data?.orders?.length
+        }));
+      } else {
+        throw new Error("Unexpected response format");
+      }
     } catch (error) {
-      console.error("Error downloading the invoice:", error);
+      console.error('Error fetching orders:', error);
+      // Swal.fire({
+      //   title: "Error",
+      //   text: "Failed to fetch orders",
+      //   icon: "error",
+      //   confirmButtonColor: "#fc2c54",
+      // });
+    } finally {
+      setLoading(false);
     }
   };
 
-  // const handleDelete = async (id) => {
-  //     const token = await JSON.parse(localStorage.getItem("token"));
-  //     if (window.confirm(`Are you sure you want to delete this Order?`)) {
-  //         try {
-  //             const res = await axios.delete(`${baseURL}/api/order/delete/${id}`, {
-  //                 headers: {
-  //                     Authorization: `${token}`
-  //                 }
-  //             });
-  //             if (res?.status === 200 && res) {
-  //                 Swal.fire({
-  //                     icon: 'success',
-  //                     title: res?.data?.message
-  //                 })
-  //                 getOrderData();
-  //             }
-  //         }
-  //         catch (error) {
-  //             console.error(error);
-  //         }
-  //     }
-  // };
 
-  const handleFileUpload = (e) => {
-    const reader = new FileReader();
-    reader.readAsBinaryString(e.target.files[0]);
-    // reader.onload = (e) => {
-    //     const data = e.target.result;
-    //     const workbook = XLSX.read(data, { type: "binary" });
-    //     const sheetName = workbook.SheetNames[0];
-    //     const sheet = workbook.Sheets[sheetName];
-    //     const parsedData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-    //     setFileData(parsedData);
-    //     addmodalExcel(); // Open the modal after reading the file
-    // };
-  };
 
-  const handleClickImport = () => {
-    // Trigger the file input click
-    fileInputRef.current.click();
-  };
-
-  /* const handleChange = (e) => {
-       const files = e.target.files;
-       if (files && files[0]) setFile(files[0]);
-   };*/
-
-  const handleChange = (name, value) => {
-    formik.setFieldValue(name, value);
-  }
-
-  const handleStatus = async (e) => {
-    e.preventDefault();
-    const token = await JSON.parse(localStorage.getItem("token"));
-    let body = {
-      order_status: statusValue,
-      cancel_reason: cancelReason,
-    };
-    if (body.order_status === "") {
-      return Swal.fire({
-        icon: "error",
-        title: "Provide Order Status",
-      });
-    }
+  const fetchDeliveryPersons = async () => {
     try {
-      await axios
-        .patch(`${orderURL}/update-order-status/${orderId}`, body, {
+      const response = await axios.get(
+        `${baseURL}/api/users/delivery-persons`,
+        {
           headers: {
-            Authorization: `${token}`,
+            Authorization: `Bearer ${token}`,
           },
-        })
-        .then((res) => {
-          if (res && res.status === 200) {
-            Swal.fire({
-              icon: "success",
-              title: res?.data?.message,
-            });
-            //SetShowmodal(false);
-            setShowOrderCancellationPopup(false);
-            //SetShowmodal(false);
-            setShowOrderCancellationPopup(false);
-            setOrderId("");
-            setStatusValue("");
-            getOrderData();
-          }
-        });
-    } catch (err) {
-      console.error(err);
+        }
+      );
+      console.log(response);
+      setDeliveryPersons(response.data.deliveryPersons);
+    } catch (error) {
+      console.error("Error fetching delivery persons:", error);
     }
   };
-
-  function capitalizeFirstLetter(string) {
-    return string?.charAt(0)?.toUpperCase() + string.slice(1);
-  }
-
-  // useEffect(() => {
-  //     getOrderData();
-  // }, [currentPage, perPage, searchText]);
 
   useEffect(() => {
-    getOrderData();
-  }, [BasicTab,searchTerm]);
 
-  const filteredData = orderData.filter((order) => {
-    const address = order?.address;
-    const addressMatches =
-      address?.addressFullName
-        ?.toLowerCase()
-        .includes(searchTerm?.toLowerCase()) ||
-      address?.addressPhoneNumber?.includes(searchTerm) ||
-      address?.addressPincode?.includes(searchTerm) ||
-      address?.city?.toLowerCase().includes(searchTerm?.toLowerCase()) ||
-      address?.country?.toLowerCase().includes(searchTerm?.toLowerCase()) ||
-      address?.houseNo?.toLowerCase().includes(searchTerm?.toLowerCase()) ||
-      address?.locality?.toLowerCase().includes(searchTerm?.toLowerCase()) ||
-      address?.roadName?.toLowerCase().includes(searchTerm?.toLowerCase()) ||
-      address?.state?.toLowerCase().includes(searchTerm?.toLowerCase());
+    fetchDeliveryPersons();
+  }, []);
 
-    const variantMatches = order.products.some((product) => {
+  useEffect(() => {
+    fetchOrders();
+
+  }, [activeTab, activeTabs, formattedStartDate]);
+
+  const getBadgeColor = (status, type) => {
+    if (type === "payment") {
       return (
-        product.variant.variantName
-          ?.toLowerCase()
-          .includes(searchTerm?.toLowerCase()) ||
-        product.variant.variantCode
-          ?.toLowerCase()
-          .includes(searchTerm?.toLowerCase())
+        {
+          pending: "danger",
+          failed: "danger",
+          completed: "success",
+          success: "success",
+        }[status] || "secondary"
       );
-    });
+    }
+    if (type === "order") {
+      return (
+        {
+          placed: "warning",
+          confirmed: "success",
+          processing: "success",
+          shipped: "success",
+          delivered: "success",
+          cancelled: "danger",
+          returned: "success",
+          pending: "danger",
+        }[status] || "secondary"
+      );
+    }
+    if (type === "delivery") {
+      return (
+        {
+          pending: "primary",
+          in_transit: "primary",
+          delivered: "success",
+          accepted: "success",
+          cancelled: "primary",
+          failed: "danger",
+        }[status] || "secondary"
+      );
+    }
+    if (type === "placed") {
+      return (
+        {
+          placed: "warning",
+          cancelled: "primary",
+          delivered: "success",
+          failed: "danger",
+        }[status] || "secondary"
+      );
+    }
+    return "secondary";
+  };
 
-    const productMatches = order.products.some((product) => {
-      if (product.product) {
-        return (
-          product.product.productName
-            ?.toLowerCase()
-            .includes(searchTerm?.toLowerCase()) ||
-          product.product.description
-            ?.toLowerCase()
-            .includes(searchTerm?.toLowerCase()) ||
-          product.product.brand.brandName
-            ?.toLowerCase()
-            .includes(searchTerm?.toLowerCase()) ||
-          product.product.category.collection_name
-            ?.toLowerCase()
-            .includes(searchTerm?.toLowerCase()) ||
-          product.product.subCategory.collection_id
-            ?.toLowerCase()
-            .includes(searchTerm?.toLowerCase()) ||
-          product.product.tags.some((tag) =>
-            tag.tag?.toLowerCase().includes(searchTerm?.toLowerCase())
-          )
-        );
-      } else {
-        return false;
-      }
-    });
+  const handleDeliveryAssign = async () => {
+    try {
+      console.log(selectedSubOrder._id, selectedDeliveryPerson);
+      const response = await axios.patch(
+        `${baseURL}/api/orders/${selectedSubOrder._id}/assign-delivery`,
+        {
+          deliveryPersonId: selectedDeliveryPerson,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-    return addressMatches || variantMatches || productMatches;
-  });
+      Swal.fire({
+        title: "Delivery Assigned!",
+        icon: "success",
+        confirmButtonColor: "#fc2c54",
+      });
 
-  const orderColumns = [
+      setShowDeliveryModal(false);
+      fetchOrders(pagination.page);
+    } catch (error) {
+      Swal.fire({
+        title: "Error",
+        text: error.response?.data?.message || "Failed to assign delivery",
+        icon: "error",
+        confirmButtonColor: "#fc2c54",
+      });
+    }
+  };
+
+  const handleStatusUpdate = async () => {
+    try {
+      const body = {
+        orderStatus: selectedStatus,
+        cancelReason: selectedStatus === "cancelled" ? cancelReason : undefined,
+      };
+
+      await axios.patch(
+        `${baseURL}/update-suborder-status/${selectedSubOrder._id}`,
+        body,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      Swal.fire({
+        title: "Status Updated!",
+        icon: "success",
+        confirmButtonColor: "#fc2c54",
+      });
+
+      setShowStatusModal(false);
+      fetchOrders(pagination.page);
+    } catch (error) {
+      Swal.fire({
+        title: "Error",
+        text: error.response?.data?.message || "Failed to update status",
+        icon: "error",
+        confirmButtonColor: "#fc2c54",
+      });
+    }
+  };
+
+  const ConfirmOrder = async (subOrder) => {
+    try {
+      const response = await axios.patch(
+        `${baseURL}/api/orders/suborders/confirm/${subOrder._id}`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      console.log(response, "response in confirm order")
+      Swal.fire({
+        title: "Status Updated!",
+        icon: "success",
+        confirmButtonColor: "#fc2c54",
+      });
+      fetchOrders(pagination.page);
+    } catch (error) {
+      Swal.fire({
+        title: "Error",
+        text: error.response?.data?.message || "Failed to update status",
+        icon: "error",
+        confirmButtonColor: "#fc2c54",
+      });
+    }
+  };
+  const AssignPorter = async (subOrder) => {
+    try {
+      await axios.post(
+        `${baseURL}/api/porter/order/${subOrder._id}`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      Swal.fire({
+        title: "Porter Assigned!",
+        icon: "success",
+        confirmButtonColor: "#fc2c54",
+      });
+      fetchOrders(pagination.page);
+    } catch (error) {
+      Swal.fire({
+        title: "Error",
+        text: error.response?.data?.message || "Failed to assign porter",
+        icon: "error",
+        confirmButtonColor: "#fc2c54",
+      });
+    }
+  };
+
+  const columns = [
     {
-      name: "#ORDER_ID",
-      selector: (row) => row["sequence_number"],
+      name: "Order ID",
+      selector: (row) => row._id,
       sortable: true,
       width: "150px",
-      center: true,
-      cell: (row) => (
-        <div className='ellipses_text_3'
-          //  style={{ textDecoration: 'underline', color: 'black' }} 
-          onClick={() => handleNavigate(row?._id)} >{row?.sequence_number}</div>
-      )
     },
     {
-      name: "CUSTOMER NAME",
-      selector: (row) => `${row.customer}`,
+      name: "Customer",
+      selector: (row) => row.user?.name,
       sortable: true,
-      center: true,
       cell: (row) => (
-        <div className="">
-          {(row?.users?.first_name !== undefined
-            ? row?.users?.first_name
-            : "N/A") +
-            " " +
-            (row?.users?.last_name !== undefined
-              ? row?.users?.last_name
-              : "N/A")}
+        <div>
+          <div>{row.user?.name || "N/A"}</div>
+          <small className="text-muted">{row.user?.mobile || "N/A"}</small>
         </div>
       ),
     },
     {
-      name: "ORDER DATE",
-      selector: (row) => `${row.createdAt}`,
+      name: "Items",
+      selector: (row) => row.subOrders?.length || 0,
       sortable: true,
-      center: true,
-      cell: (row) => moment(row.createdAt).format("DD MMM YYYY hh:mm A"),
+      cell: (row) => row.subOrders?.length || 0,
+      width: "80px"
     },
 
     {
-      name: "TOTAL",
-      selector: (row) => `${row?.order_value}`,
-      cell: (row) =>
-        row?.order_value ? "$" + row?.order_value.toFixed(2) : "N/A",
+      name: "Delivery charges",
+      selector: (row) => row.deliveryCharge,
       sortable: true,
-      center: true,
+      cell: (row) => (
+        <span className="fw-bold">
+          ₹
+          {row.deliveryCharge?.toLocaleString("en-IN", {
+            maximumFractionDigits: 2,
+          })}
+        </span>
+      ),
     },
     {
-      name: "NO. OF ITEMS",
-      selector: (row) => `${row?.products}`,
-      cell: (row) => (
-        <div
-          style={{
-            marginLeft: "30px",
-          }}
-        >
-          {row?.products && row?.products.length}
-        </div>
-      ),
+      name: "Tax",
+      selector: (row) => row.taxDetails?.totalTax,
       sortable: true,
-      center: true,
+      cell: (row) => (
+        <span className="fw-bold">
+          ₹
+          {row.taxDetails?.totalTax?.toLocaleString("en-IN", {
+            maximumFractionDigits: 2,
+          })}
+        </span>
+      ),
+    },
+    {
+      name: "Total Amount",
+      selector: (row) => row.totalAmount,
+      sortable: true,
+      cell: (row) => (
+        <span className="fw-bold">
+          ₹
+          {row.totalAmount?.toLocaleString("en-IN", {
+            maximumFractionDigits: 2,
+          })}
+        </span>
+      ),
+    },
+    {
+      name: "Payment Status",
+      selector: (row) => row.paymentStatus,
+      sortable: true,
+      cell: (row) => (
+        <Badge color={getBadgeColor(row.paymentStatus, "payment")}>
+          {row.paymentStatus?.toUpperCase()}
+        </Badge>
+      ),
+    },
+    {
+      name: "Order Status",
+      selector: (row) => row.orderStatus,
+      sortable: true,
+      cell: (row) => (
+        <Badge color={getBadgeColor(row.orderStatus, "placed")}>
+          {row.orderStatus?.toUpperCase()}
+        </Badge>
+      ),
     },
     // {
-    //     name: 'PAYMENT DETAILS',
-    //     selector: row => `${row.payment_method}`,
-    //     cell: (row) => (
-    //         row.payment_method
-    //     ),
-    //     sortable: true,
-    //     center: true,
+    //   name: "Delivery charges",
+    //   selector: row => row.deliveryCharge,
+    //   sortable: true,
+    //   cell: row => (
+    //     <span className="fw-bold">₹{row.deliveryCharge?.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+    //   )
+    // },
+    // {
+    //   name: "Total Tax",
+    //   selector: row => row.taxDetails.totalTax,
+    //   sortable: true,
+    //   cell: row => (
+    //     <span className="fw-bold">₹{row.taxDetails?.totalTax?.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
+    //   )
     // },
     {
-      name: "DELIVERY ADDRESS",
-      selector: (row) => `${row.address}`,
-      width: "350px",
-      cell: (row) => (
-        <div className="ellipses_text_1">
-          {row.address?.address ? (
-            <>
-              <p className="ellipses-line-1">{row.address?.address}</p>
-            </>
-          ) : (
-            <>
-            {/* {console.log(row,"fillesrefs")} */}
-              {/* {row.address?.addressFullName}
-              {row.address?.houseNo}, {row.address?.roadName}, {row.address?.locality}
-              {row.address?.city}, {row.address?.country}, {row.address?.addressPincode}
-              {row.address?.addressPhoneNumber} */}
-              {row?.address[0]?.addressFullName || ""}
-              {row?.address[0]?.houseNo || ""}, {row?.address[0]?.roadName || ""},{" "}
-              {row?.address[0]?.locality || ""}
-              {row?.address[0]?.city || ""}, {row?.address[0]?.country || ""},{" "}
-              {row?.address[0]?.addressPincode || ""}
-              {row?.address[0]?.addressPhoneNumber || ""}
-            </>
-          )}
-        </div>
-      ),
+      name: "Coupon Applied",
+      selector: (row) => row.couponCode,
       sortable: true,
-      center: true,
-    },
-    {
-      name: "STORE",
-      selector: (row) => `${row.discard_from}`,
-      cell: (row) => row?.store?.storeName,
-      sortable: true,
-      center: true,
-    },
-    {
-      name: "ORDER STATUS",
-      selector: (row) => `${row.order_status}`,
-      cell: (row) => {
-        const customColors = {
-          accepted: "primary",
-          processing: "warning",
-          "on-the-way": "info",
-          delivered: "success",
-          rejected: "danger",
-          cancelled: "danger",
-          returned: "secondary",
-        };
-
-        const statusKey = row?.order_status?.toLowerCase();
-        const color = customColors[statusKey] || 'primary';
-        return (
-          <span style={{ fontSize: '13px' }} className={`badge badge-light-${color}`}>
-            {capitalizeFirstLetter(row?.order_status)}
-          </span>
-        );
-      },
-      sortable: true,
-      center: true,
-    }
-    ,
-
-    {
-      name: 'Actions',
-      cell: (row) => (
-        <div className='d-flex justify-content-end align-items-center' style={{ marginRight: '20px' }}>
-          <div
-            className='cursor-pointer'
-          >
-            <UncontrolledDropdown className='action_dropdown'>
-              <DropdownToggle className='action_btn'
-              >
-                <MoreVertical color='#000' size={16} />
-              </DropdownToggle>
-              <DropdownMenu>
-                <DropdownItem onClick={() => handleNavigate(row?._id)}>
-                  View
-                  <FaRegEye />
-                </DropdownItem>
-                {(row.order_status !== 'cancelled') &&
-                  <DropdownItem onClick={() => {
-                    toggleCancelOrderModal()
-                    setOrderId(row?._id)
-                    setStatusValue("cancelled")
-                  }
-                  }>
-                    Cancel Order
-                    <i className="fa fa-refresh" aria-hidden="true"></i>
-                  </DropdownItem>}
-                <DropdownItem onClick={() => downloadInvoice(row?._id)}>
-                  Invoice
-                  <FaDownload />
-                </DropdownItem>
-                {/* <DropdownItem className='delete_item' onClick={() => handleDelete(row?._id)} >
-                                    Delete
-                                    <FaTrashAlt />
-                                </DropdownItem> */}
-              </DropdownMenu>
-            </UncontrolledDropdown>
+      cell: (row) =>
+        row.couponCode ? (
+          <div className="d-flex flex-column gap-2">
+            <Badge color="info" pill>
+              {row.couponCode}
+            </Badge>
+            ₹{row.couponDiscount}
           </div>
-        </div>
-      ),
-      sortable: false,
-      center: true,
+        ) : (
+          "No Coupon"
+        ),
+    },
+    {
+      name: "Order Date",
+      selector: (row) => row.createdAt,
+      sortable: true,
+      cell: (row) => moment(row.createdAt).format("DD/MM/YYYY"),
     },
   ];
 
+  const subOrderColumns = [
+    {
+      name: "Product",
+      selector: (row) => row.variantId?.title,
+      cell: (row) => (
+        <div
+          className="d-flex align-items-center text-inherit hover:text-blue-600 hover:underline hover:cursor-pointer "
+          onClick={() => navigate(`/orders/suborder/${row._id}`)}
+        >
+          <img
+            src={row.variantId?.images?.[0]}
+            alt={row.variantId?.title}
+            style={{
+              width: "50px",
+              height: "50px",
+              objectFit: "cover",
+              marginRight: "10px",
+              borderRadius: "4px",
+            }}
+          />
+          <div>
+            <div>{row.variantId?.title}</div>
+            <small className="text-muted">
+              Rental Period: {row.rentalPeriod?.toUpperCase()}
+            </small>
+          </div>
+        </div>
+      ),
+    },
+    {
+      name: "Owner",
+      selector: (row) => row.owner?.name,
+      cell: (row) => (
+        <div>
+          <div>{row.owner?.name}</div>
+          <small className="text-muted">{row.owner?.mobile}</small>
+        </div>
+      ),
+
+    },
+    {
+      name: "Quantity & Price",
+      cell: (row) => (
+        <div>
+          <div>Qty: {row.quantity}</div>
+          <span className="fw-bold">
+            ₹{row.price?.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+          </span>
+        </div>
+      ),
+    },
+    {
+      name: "Delivery Address",
+      cell: (row) => (
+        <div style={{ maxWidth: "200px" }}>
+          <small>{row.deliveryDetails?.deliveryAddress?.full || "N/A"}</small>
+        </div>
+      ),
+    },
+    {
+      name: "Order Status",
+      cell: (row) => (
+        <div>
+          <Badge
+            color={getBadgeColor(row.orderStatus, "order")}
+            className="me-2"
+          >
+            {row.orderStatus?.toUpperCase()}
+          </Badge>
+        </div>
+      ),
+    },
+    {
+      name: "Delivery Status",
+      cell: (row) => (
+        <div>
+          <Badge color={getBadgeColor(row.deliveryStatus, "delivery")}>
+            {row.deliveryStatus?.toUpperCase()}
+          </Badge>
+        </div>
+      ),
+    },
+    {
+      name: "Actions",
+      cell: (row) => (
+        <UncontrolledDropdown direction="down" className="mb-20">
+          <DropdownToggle tag="span" className="p-2 cursor-pointer">
+            <MoreVertical size={16} />
+          </DropdownToggle>
+          <DropdownMenu container="body" end>
+            <DropdownItem
+              onClick={() => navigate(`/orders/suborder/${row._id}`)}
+              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', padding: "10px" }}
+            >
+              <Eye className="me-2" size={14} />
+              View Details
+            </DropdownItem>
+            <DropdownItem
+              onClick={() => {
+                setSelectedSubOrder(row);
+                setShowDeliveryModal(true);
+              }}
+              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', padding: "10px" }}
+            >
+              <Truck className="me-2" size={14} />
+              Assign Delivery
+            </DropdownItem>
+            <DropdownItem
+              onClick={() => {
+                setSelectedSubOrder(row);
+                AssignPorter(row)
+              }}
+              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', padding: "10px" }}
+            >
+              <Truck className="me-2" size={14} />
+              Assign Porter
+            </DropdownItem>
+            <DropdownItem
+              onClick={() => {
+                setSelectedSubOrder(row);
+                ConfirmOrder(row);
+              }}
+              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', padding: "10px" }}
+            >
+              <AlertCircle className="me-2" size={14} />
+              Confirm Order
+            </DropdownItem>
+            <DropdownItem
+              onClick={() => {
+                setSelectedSubOrder(row);
+                setSelectedStatus(row.orderStatus);
+                setShowStatusModal(true);
+              }}
+              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
+            >
+              <AlertCircle className="me-2" size={14} />
+              Update Status
+            </DropdownItem>
+          </DropdownMenu>
+        </UncontrolledDropdown>
+      ),
+    },
+  ];
+
+  const ExpandedComponent = ({ data }) => (
+    <div className="p-4 bg-light">
+      <h6 className="mb-3 text-gray-900 fw-bold">Suborders</h6>
+      <DataTable
+        data={data.subOrders}
+        columns={subOrderColumns}
+        dense
+        className="bg-white rounded shadow-sm "
+      />
+    </div>
+  );
+
+  // Filter function for search
+  const filteredOrders = orderData.filter(
+    (item) =>
+      item._id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.user?.mobile?.includes(searchTerm) ||
+      item.couponCode?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+
+  const handleDateChange = (date) => {
+    const formatted = format(date, 'MMM yyyy'); // e.g., "Jun 2025"
+    console.log(formatted, "formatted date");
+    setStartDate(date);
+    setFormattedStartDate(formatted);
+    fetchOrders();
+  };
+
+  console.log(filteredOrders, "filteredorders");
+
   return (
     <Fragment>
-      <Row xxl={12} className="p-3">
-        <Row>
-          <Col md={12} lg={12} xl={12} xxl={12}>
-            <div className="file-content align-items-center justify-content-between">
-              <H5 attrH5={{ className: "mb-0" }}>Orders</H5>
-              <div className="px-4">
-                      <Nav tabs className="product_variant_tabs mb-3">
-                        <NavItem>
-                          <NavLink
-                            className={BasicTab === 1 ? "active" : ""}
-                            onClick={() => handleTab(1)}
-                          >
-                            Today
-                          </NavLink>
-                        </NavItem>
-                        <NavItem>
-                          <NavLink
-                            className={BasicTab === 2 ? "active" : ""}
-                            onClick={() => handleTab(2)}
-                          >
-                            Weekly
-                          </NavLink>
-                        </NavItem>
-                        <NavItem>
-                          <NavLink
-                            className={BasicTab === 3 ? "active" : ""}
-                            onClick={() => handleTab(3)}
-                          >
-                            Monthly
-                          </NavLink>
-                        </NavItem>
-                        <NavItem>
-                          <NavLink
-                            className={BasicTab === 4 ? "active" : ""}
-                            onClick={() => handleTab(4)}
-                          >
-                            All
-                          </NavLink>
-                        </NavItem>
-                      </Nav>
-                    </div>
-              <div className="d-flex">
-                <div className="mb-0 form-group position-relative search_outer d-flex align-items-center">
-                  <i className="fa fa-search"></i>
-                  <input
-                    className="form-control border-0"
-                    value={searchTerm}
-                    onChange={(e) => handleSearch(e)}
-                    type="text"
-                    placeholder="Search..."
-                  />
-                </div>
-                {/* <Input type='select' className='ms-3 sortBy' name='subCategory' >
-                                    <option>Sort By</option>
-                                </Input> */}
+      <div className="card-header d-flex align-items-center justify-between" style={{ padding: '15px 30px' }}>
+        <Nav tabs className='product_variant_tabs'>
+          <NavItem>
+            <NavLink className={activeTab === 'placed' ? 'active' : ''} onClick={() => handleTabClick('placed')}>
+              Placed
+            </NavLink>
+          </NavItem>
+          <NavItem>
+            <NavLink className={activeTab === 'confirmed' ? 'active' : ''} onClick={() => handleTabClick('confirmed')}>
+              Confirmed
+            </NavLink>
+          </NavItem>
+          <NavItem>
+            <NavLink className={activeTab === 'processing' ? 'active' : ''} onClick={() => handleTabClick('processing')}>
+              Processing
+            </NavLink>
+          </NavItem>
+          <NavItem>
+            <NavLink className={activeTab === 'shipped' ? 'active' : ''} onClick={() => handleTabClick('shipped')}>
+              Shipped
+            </NavLink>
+          </NavItem>
+          <NavItem>
+            <NavLink className={activeTab === 'delivered' ? 'active' : ''} onClick={() => handleTabClick('delivered')}>
+              Delivered
+            </NavLink>
+          </NavItem>
+          <NavItem>
+            <NavLink className={activeTab === 'cancelled' ? 'active' : ''} onClick={() => handleTabClick('cancelled')}>
+              Cancelled
+            </NavLink>
+          </NavItem>
+          <NavItem>
+            <NavLink className={activeTab === 'returned' ? 'active' : ''} onClick={() => handleTabClick('returned')}>
+              Returned
+            </NavLink>
+          </NavItem>
+        </Nav>
+        <Nav tabs className='product_variant_tabs'>
+          <NavItem>
+            <NavLink className={activeTabs === 'day' ? 'active' : ''} onClick={() => handleTabClicks('day')}>
+              Today
+            </NavLink>
+          </NavItem>
+          <NavItem>
+            <NavLink className={activeTabs === 'week' ? 'active' : ''} onClick={() => handleTabClicks('week')}>
+              Weekly
+            </NavLink>
+          </NavItem>
+          <NavItem>
+            <NavLink className={activeTabs === 'month' ? 'active' : ''} onClick={() => handleTabClicks('month')}>
+              Monthly
+            </NavLink>
+          </NavItem>
+
+
+        </Nav>
+
+        {/* <div>
+                            <DatePicker
+                                className="form-control datepickerr digits mx-2"
+                                selected={startDate}
+                                onChange={(date) => {
+                                    setStartDate(date);
+                                    fetchDashboardData(date); //  fetch data on change
+                                }}
+                                showMonthYearPicker //  Enables month + year picker view
+                                dateFormat="MMM yyyy" //  Displays like "Jan 2025"
+                                yearItemNumber={9}
+                                showIcon
+                                placeholderText="Last Year"
+                            />
+
+
+                        </div> */}
+
+      </div>
+      <Row className="pb-4">
+        <div className="d-flex justify-content-between align-items-center">
+          <H4>Order List</H4>
+
+          <div>
+            <DatePicker
+              className="form-control datepickerr digits mx-2"
+              selected={startDate}
+              onChange={handleDateChange}
+              showMonthYearPicker
+              dateFormat="MMM yyyy"
+              yearItemNumber={9}
+              showIcon
+              placeholderText="Last Year"
+            />
+          </div>
+          <div className="file-content">
+            <Media>
+              <div className="mb-0 form-group position-relative search_outer d-flex align-items-center">
+                <i className="fa fa-search"></i>
+                <input
+                  className="form-control border-0"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  type="text"
+                  placeholder="Search by ID, Customer, Mobile or Coupon..."
+                />
               </div>
-            </div>
-          </Col>
-        </Row>
+
+            </Media>
+          </div>
+        </div>
+
       </Row>
 
       <DataTable
-        data={filteredData}
-        columns={orderColumns}
+        columns={columns}
+        data={filteredOrders}
         pagination
-        onSelectedRowsChange={handleRowSelected}
-        clearSelectedRows={toggleDelet}
-        progressPending={isLoading}
-        // paginationServer
+        paginationPerPage={10}
+        paginationRowsPerPageOptions={[10, 25, 50]}
+        progressPending={loading}
         progressComponent={<Loader />}
-      // paginationTotalRows={totalRows}
-      // onChangeRowsPerPage={handlePerRowsChange}
-      // onChangePage={handlePageChange}
+        expandableRows
+        expandableRowsComponent={ExpandedComponent}
       />
 
-      {/* {!isLoading && filteredData.length === 0 &&
-                <>
-                    <p className='my-5 text-center'>No Data Found</p>
-                </>
-            } */}
-      <CommonModal isOpen={showOrderCancellationPopup} title={"Cancel Order"} className="store_modal" toggler={toggleCancelOrderModal} size="md">
-        <Container>
-          <form className="p-2 md:p-4" onSubmit={formik.handleSubmit}>
-            <div className="flex flex-col gap-4">
-
-              <label
-                style={{
-                  fontFamily: 'Lato',
-                  fontSize: '18px',
-                  fontWeight: '400',
-                  textAlign: 'left',
-                }}
-              >
-                Please enter the reason for cancellation
-              </label>
-              <input
-                type="text"
-                id="reason"
-                name='cancel_reason'
-                placeholder="Enter reason for cancellation"
-                className={`w-[100%] focus:outline-none border-b-2 p-2`}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                value={formik.values.cancel_reason}
-              />
-              {formik.touched.cancel_reason && formik.errors.cancel_reason ? (
-                <span className="text-red-500 text-sm mt-2">{formik.errors.cancel_reason}</span>
-
-              ) : (
-                ""
-              )}
-            </div>
-            <div className="flex justify-center gap-4">
-              <button
-                className="bg-[#D3178A] mt-4 w-32 h-12 rounded-full text-white"
-                type="submit"
-              >
-                Cancel Order
-              </button>
-
-            </div>
-          </form>
-        </Container>
-      </CommonModal>
-
+      {/* Delivery Assignment Modal */}
       <CommonModal
-        isOpen={showModal}
-        title={"Change Status"}
-        className="store_modal"
-        toggler={toggleModal}
+        isOpen={showDeliveryModal}
+        title="Assign Delivery Person"
+        toggler={() => setShowDeliveryModal(false)}
         size="md"
       >
         <Container>
-          <Form className="status_form" onSubmit={handleStatus}>
-            <>
-              <Col xxl={12}>
+          <Form>
+            <Col xxl={12}>
+              <FormGroup>
+                <Label>Select Delivery Person</Label>
+                <Input
+                  type="select"
+                  value={selectedDeliveryPerson}
+                  onChange={(e) => setSelectedDeliveryPerson(e.target.value)}
+                >
+                  <option value="">Select...</option>
+                  {deliveryPersons.map((person) => (
+                    <option key={person._id} value={person._id}>
+                      {person.name}
+                    </option>
+                  ))}
+                </Input>
+              </FormGroup>
+              <Row className="text-center">
+                <Button
+                  color="primary"
+                  onClick={handleDeliveryAssign}
+                  disabled={!selectedDeliveryPerson}
+                >
+                  Assign Delivery
+                </Button>
+              </Row>
+            </Col>
+          </Form>
+        </Container>
+      </CommonModal>
+
+      {/* Status Update Modal */}
+      <CommonModal
+        isOpen={showStatusModal}
+        title="Update Order Status"
+        toggler={() => setShowStatusModal(false)}
+        size="md"
+      >
+        <Container>
+          <Form>
+            <Col xxl={12}>
+              <FormGroup>
+                <Label>Select Status</Label>
+                <Input
+                  type="select"
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                >
+                  <option value="">Select...</option>
+                  <option value="placed">Placed</option>
+                  <option value="confirmed">Confirmed</option>
+                  <option value="cancelled">Cancelled</option>
+                </Input>
+              </FormGroup>
+              {selectedStatus === "cancelled" && (
                 <FormGroup>
-                  <Row>
-                    {/* <Col>
-                                            <Label>
-                                                <Input type='radio' name='status' className='me-2' id='1' />
-                                                Pending
-                                            </Label>
-                                        </Col> */}
-                    <Col>
-                      <Label>
-                        <Input
-                          type="radio"
-                          name="status"
-                          className="me-2"
-                          id="1"
-                          value={"accepted"}
-                          checked={statusValue === "accepted"}
-                          onChange={(e) => setStatusValue(e.target.value)}
-                        />
-                        Accepted
-                      </Label>
-                    </Col>
-                    <Col>
-                      <Label>
-                        <Input
-                          type="radio"
-                          name="status"
-                          className="me-2"
-                          id="1"
-                          value={"rejected"}
-                          checked={statusValue === "rejected"}
-                          onChange={(e) => setStatusValue(e.target.value)}
-                        />
-                        Rejected
-                      </Label>
-                    </Col>
-                    <Col>
-                      <Label>
-                        <Input
-                          type="radio"
-                          name="status"
-                          className="me-2"
-                          id="1"
-                          value="on-the-way"
-                          checked={statusValue === "on-the-way"}
-                          onChange={(e) => setStatusValue(e.target.value)}
-                        />
-                        On the way
-                      </Label>
-                    </Col>
-                    <Col>
-                      <Label>
-                        <Input
-                          type="radio"
-                          name="status"
-                          className="me-2"
-                          value="delivered"
-                          id="1"
-                          checked={statusValue === "delivered"}
-                          onChange={(e) => setStatusValue(e.target.value)}
-                        />
-                        Delivered
-                      </Label>
-                    </Col>
-                    <Col>
-                      <Label>
-                        <Input
-                          type="radio"
-                          name="status"
-                          className="me-2"
-                          value="cancelled"
-                          id="1"
-                          checked={statusValue === "cancelled"}
-                          onChange={(e) => setStatusValue(e.target.value)}
-                        />
-                        Cancelled
-                      </Label>
-                    </Col>
-                    <Col>
-                      <Label>
-                        <Input
-                          type="radio"
-                          name="status"
-                          className="me-2"
-                          value="returned"
-                          id="1"
-                          checked={statusValue === "returned"}
-                          onChange={(e) => setStatusValue(e.target.value)}
-                        />
-                        Returned
-                      </Label>
-                    </Col>
-                  </Row>
+                  <Label>Cancellation Reason</Label>
+                  <Input
+                    type="text"
+                    placeholder="Enter cancellation reason"
+                    value={cancelReason}
+                    onChange={(e) => setCancelReason(e.target.value)}
+                  />
                 </FormGroup>
-              </Col>
-            </>
-            <Row>
-              <Col xxl={12} className="text-right mt-3">
+              )}
+              <Row className="text-center">
                 <Button
-                  type="button"
-                  className="cancel_Btn"
-                  onClick={() => SetShowmodal(false)}
+                  color="primary"
+                  onClick={handleStatusUpdate}
+                  disabled={!selectedStatus}
                 >
-                  Cancel
+                  Update Status
                 </Button>
-                <Button
-                  type="submit"
-                  className="cursor-pointer bg-[#ff0000] font-medium w-40 ms-2 px-2 py-2 rounded-2xl text-white flex justify-center items-center"
-                >
-                  Change Status
-                </Button>
-              </Col>
-            </Row>
+              </Row>
+            </Col>
           </Form>
         </Container>
       </CommonModal>
     </Fragment>
   );
 };
-export default DataTableComponent;
+
+export default OrderTable;

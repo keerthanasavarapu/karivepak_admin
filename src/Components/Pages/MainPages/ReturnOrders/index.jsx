@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Container, Row, Col, Card, CardBody } from 'reactstrap';
-import DataTableComponent from './OrdersTable';
-import './style.scss';
+import DataTableComponent from './ReturnOrdersTable';
+import '../Orders/style.scss';
 import square from '../../../../../src/assets/images/sqaurebox.svg'
 import axios from 'axios';
 import { baseURL } from '../../../../Services/api/baseURL';
 
-const Orders = () => {
+const ReturnOrders = () => {
   const [countData, setCountData] = useState();
 
   const getCount = async () => {
@@ -73,7 +73,7 @@ const Orders = () => {
             <CardBody>
               <div className='d-flex align-items-center justify-content-between'>
                 <div className='d-flex align-items-center gap-2'>
-                  <img src={square} alt="" className='square_box' />  <h6 className="mb-0"> Total Completed SubOrders</h6>
+                  <img src={square} alt="" className='square_box' />  <h6 className="mb-0"> Total Returned SubOrders</h6>
                 </div>
               </div>
               <div className='d-flex justify-content-between mt-3' >
@@ -85,7 +85,7 @@ const Orders = () => {
             </CardBody>
           </Card>
         </Col>
-        <Col xl='3' sm='6' >
+        {/* <Col xl='3' sm='6' >
           <Card className='social-widget widget-hover'>
             <CardBody>
               <div className='d-flex align-items-center justify-content-between'>
@@ -101,7 +101,7 @@ const Orders = () => {
 
             </CardBody>
           </Card>
-        </Col>
+        </Col> */}
       </Row>
 
       <Row>
@@ -119,4 +119,4 @@ const Orders = () => {
 
 };
 
-export default Orders;
+export default ReturnOrders;
