@@ -422,6 +422,8 @@ const CategoryTable = () => {
         )
         : [];
 
+        console.log(categories,"categories")
+
     return (
         <Fragment>
             <Row className='pb-4'>

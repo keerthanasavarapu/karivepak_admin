@@ -52,16 +52,17 @@ const ProductsTable = () => {
         type: 'add', // 'add', 'edit', 'delete'
         selectedProduct: null
     });
-
+console.log(modal.selectedProduct,"selected product")
     const [formData, setFormData] = useState({
         productName: '',
         categoryId: '',
         subCategoryId: '',
+        weight:"",
         // description: '',
         image: null,               // for storing file object
         imagePreview: '',          // for showing preview if needed
         price: '',                 // number input
-        quantity: '',              // number input
+             // number input
         stock: ''                  // number input
     });
 
@@ -81,7 +82,7 @@ const ProductsTable = () => {
                 params: { page, limit, search },
                 headers: { Authorization: `Bearer ${token}` }
             });
-
+console.log(response,"response of products")
             setProducts({
                 data: response.data.products || [],
                 loading: false,
@@ -152,18 +153,20 @@ const ProductsTable = () => {
             type,
             selectedProduct: product
         });
+        console.log(product,"product")
 
         if (product) {
             setFormData({
-                productName: product.name || '',
-                price: product.price || '',
-                stock: product.stock || '',
+                productName: product?.name || '',
+                price: product?.price || '',
+                stock: product?.stock || '',
                 quantity: product.quantity || '',
+                weight:product?.weight||"",
                 // description: product.description || '',
-                categoryId: product.category?._id || '',
-                subCategoryId: product.subCategory?._id || '',
+                categoryId: product?.main_category?._id || '',
+                subCategoryId: product?.category?._id || '',
                 image: null, // clear file input
-                imagePreview: product.image ? `${baseURL}${product.image}` : null
+                imagePreview: product?.image ? product?.image : null
             });
         } else {
             resetForm();
@@ -180,7 +183,7 @@ const ProductsTable = () => {
             productName: '',
             price: '',
             stock: '',
-            quantity: '',
+            weight:"",
             // description: '',
             categoryId: '',
             subCategoryId: '',
@@ -199,7 +202,7 @@ const ProductsTable = () => {
     data.append('category', formData.subCategoryId); // Subcategory (if needed by backend)
     // if (formData.description) data.append('description', formData.description);
     data.append('price', formData.price);
-    data.append('quantity', formData.quantity);
+    data.append('weight', formData.weight);
     data.append('stock', formData.stock);
 
     if (formData.image instanceof File) {
@@ -305,8 +308,8 @@ const ProductsTable = () => {
             center: true,
         },
         {
-            name: 'Quantity',
-            selector: row => row.quantity,
+            name: 'Weight',
+            selector: row => row.weight,
             sortable: true,
             center: true,
         },
@@ -374,7 +377,7 @@ const ProductsTable = () => {
         }
     };
 
-
+console.log(formData,"formdata")
 
     return (
         <div>
@@ -476,7 +479,7 @@ const ProductsTable = () => {
                             <Label>Product Name<span className="text-danger">*</span></Label>
                             <Input
                                 type="text"
-                                value={formData.name}
+                                value={formData.productName}
                                 onChange={(e) =>
                                     setFormData((prev) => ({
                                         ...prev,
@@ -488,14 +491,14 @@ const ProductsTable = () => {
                         </FormGroup>
 
                         <FormGroup>
-                            <Label>Quantity<span className="text-danger">*</span></Label>
+                            <Label>Weight<span className="text-danger">*</span></Label>
                             <Input
-                                type="number"
-                                value={formData.quantity}
+                                type="text"
+                                value={formData.weight}
                                 onChange={(e) =>
                                     setFormData((prev) => ({
                                         ...prev,
-                                        quantity: e.target.value,
+                                        weight: e.target.value,
                                     }))
                                 }
                                 required
