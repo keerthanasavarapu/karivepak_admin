@@ -52,17 +52,16 @@ const ProductsTable = () => {
         type: 'add', // 'add', 'edit', 'delete'
         selectedProduct: null
     });
-console.log(modal.selectedProduct,"selected product")
+    console.log(modal.selectedProduct, "selected product")
     const [formData, setFormData] = useState({
         productName: '',
         categoryId: '',
         subCategoryId: '',
-        weight:"",
+        weight: "",
         // description: '',
-        image: null,               // for storing file object
-        imagePreview: '',          // for showing preview if needed
+        image: [],               // for storing file object
+        imagePreview: [],          // for showing preview if needed
         price: '',                 // number input
-             // number input
         stock: ''                  // number input
     });
 
@@ -82,7 +81,7 @@ console.log(modal.selectedProduct,"selected product")
                 params: { page, limit, search },
                 headers: { Authorization: `Bearer ${token}` }
             });
-console.log(response,"response of products")
+            console.log(response, "response of products")
             setProducts({
                 data: response.data.products || [],
                 loading: false,
@@ -153,20 +152,19 @@ console.log(response,"response of products")
             type,
             selectedProduct: product
         });
-        console.log(product,"product")
+        console.log(product, "product")
 
         if (product) {
             setFormData({
                 productName: product?.name || '',
                 price: product?.price || '',
                 stock: product?.stock || '',
-                quantity: product.quantity || '',
-                weight:product?.weight||"",
+                weight: product?.weight || "",
                 // description: product.description || '',
                 categoryId: product?.main_category?._id || '',
                 subCategoryId: product?.category?._id || '',
-                image: null, // clear file input
-                imagePreview: product?.image ? product?.image : null
+                image: [], // clear file input
+                imagePreview: Array.isArray(product?.image) ? product.image : []
             });
         } else {
             resetForm();
@@ -183,63 +181,63 @@ console.log(response,"response of products")
             productName: '',
             price: '',
             stock: '',
-            weight:"",
+            weight: "",
             // description: '',
             categoryId: '',
             subCategoryId: '',
-            image: null,
-            imagePreview: null
+            image: [],
+            imagePreview: []
         });
     };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+    const handleSubmit = async (e) => {
+        e.preventDefault();
 
-    const data = new FormData();
+        const data = new FormData();
 
-    data.append('name', formData.productName); // ✅ match backend field "name"
-    data.append('main_category', formData.categoryId); // ✅ match backend field "main_category"
-    data.append('category', formData.subCategoryId); // Subcategory (if needed by backend)
-    // if (formData.description) data.append('description', formData.description);
-    data.append('price', formData.price);
-    data.append('weight', formData.weight);
-    data.append('stock', formData.stock);
+        data.append('name', formData.productName); // ✅ match backend field "name"
+        data.append('main_category', formData.categoryId); // ✅ match backend field "main_category"
+        data.append('category', formData.subCategoryId); // Subcategory (if needed by backend)
+        // if (formData.description) data.append('description', formData.description);
+        data.append('price', formData.price);
+        data.append('weight', formData.weight);
+        data.append('stock', formData.stock);
 
-    if (formData.image instanceof File) {
-        data.append('image', formData.image);
-    }
-
-    try {
-        const endpoint = modal.type === 'add'
-            ? `${baseURL}/api/products`
-            : `${baseURL}/api/products/${modal.selectedProduct._id}`;
-
-        const method = modal.type === 'add' ? 'post' : 'put';
-
-        await axios[method](endpoint, data, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'multipart/form-data',
-            },
+        formData.image.forEach((imageFile) => {
+            data.append('image', imageFile);
         });
 
-        Swal.fire({
-            icon: 'success',
-            title: modal.type === 'add' ? 'Product Added' : 'Product Updated',
-            showConfirmButton: false,
-            timer: 1500,
-        });
+        try {
+            const endpoint = modal.type === 'add'
+                ? `${baseURL}/api/products`
+                : `${baseURL}/api/products/${modal.selectedProduct._id}`;
 
-        closeModal();
-        fetchProducts(products.currentPage);
-    } catch (error) {
-        Swal.fire({
-            icon: 'error',
-            title: 'Error',
-            text: error.response?.data?.message || 'Failed to submit product',
-        });
-    }
-};
+            const method = modal.type === 'add' ? 'post' : 'put';
+
+            await axios[method](endpoint, data, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+
+            Swal.fire({
+                icon: 'success',
+                title: modal.type === 'add' ? 'Product Added' : 'Product Updated',
+                showConfirmButton: false,
+                timer: 1500,
+            });
+
+            closeModal();
+            fetchProducts(products.currentPage);
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: error.response?.data?.message || 'Failed to submit product',
+            });
+        }
+    };
 
 
     // Delete/Status Change Handler
@@ -272,14 +270,24 @@ console.log(response,"response of products")
             name: 'Image',
             selector: row => row.image,
             center: true,
-            cell: row => (
-                <img
-                    src={row.image?.startsWith('/uploads') ? `${baseURL}${row.image}` : row.image}
-                    alt={row.productName}
-                    style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '6px' }}
-                />
-            ),
-        },
+            cell: row => {
+                const firstImage = Array.isArray(row.image) ? row.image[0] : row.image;
+
+                const imageUrl =
+                    firstImage?.startsWith('/uploads') ? `${baseURL}${firstImage}` : firstImage;
+
+                return firstImage ? (
+                    <img
+                        src={imageUrl}
+                        alt={row.productName}
+                        style={{ width: '60px', height: '60px', objectFit: 'cover', borderRadius: '6px' }}
+                    />
+                ) : (
+                    'No Image'
+                );
+            }
+        }
+        ,
         {
             name: 'Product Name',
             selector: row => row.name,
@@ -365,19 +373,28 @@ console.log(response,"response of products")
         (item.productName || '').toLowerCase().includes((searchTerm || '').toLowerCase())
     );
 
-
     const handleImageUpload = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setFormData((prev) => ({
-                ...prev,
-                image: file,
-                imagePreview: URL.createObjectURL(file),
-            }));
+        const files = Array.from(e.target.files);
+
+        if (files.length > 5) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Limit Exceeded',
+                text: 'You can upload a maximum of 5 images.',
+            });
+            return;
         }
+
+        const previews = files.map((file) => URL.createObjectURL(file));
+
+        setFormData((prev) => ({
+            ...prev,
+            image: files,
+            imagePreview: previews,
+        }));
     };
 
-console.log(formData,"formdata")
+    console.log(formData, "formdata")
 
     return (
         <div>
@@ -550,24 +567,29 @@ console.log(formData,"formdata")
                         </FormGroup> */}
 
                         <FormGroup>
-                            <Label>Image<span className="text-danger">*</span></Label>
+                            <Label>Images <span className="text-danger">*</span></Label>
                             <Input
                                 type="file"
                                 accept="image/*"
+                                multiple
                                 onChange={handleImageUpload}
                                 required={modal.type === 'add'}
-
-
                             />
-                            {formData.imagePreview && (
-                                <img
-                                    src={formData.imagePreview}
-                                    alt="Preview"
-                                    className="mt-2"
-                                    style={{ maxWidth: '120px', borderRadius: '8px' }}
-                                />
+
+                            {formData.imagePreview && formData.imagePreview.length > 0 && (
+                                <div className="mt-2 d-flex flex-wrap gap-2">
+                                    {formData.imagePreview.map((preview, index) => (
+                                        <img
+                                            key={index}
+                                            src={preview}
+                                            alt={`Preview ${index}`}
+                                            style={{ maxWidth: '120px', borderRadius: '8px' }}
+                                        />
+                                    ))}
+                                </div>
                             )}
                         </FormGroup>
+
 
                         <Row className="text-center">
                             <Button type="submit">
