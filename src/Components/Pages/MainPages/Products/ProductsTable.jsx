@@ -19,18 +19,20 @@ import {
     ModalFooter,
     Container,
 } from 'reactstrap';
+
 import {
     PlusCircle,
     MoreVertical,
     Edit,
     Trash2
 } from 'react-feather';
+import { FiTrash, FiPlus } from 'react-icons/fi';
 import axios from 'axios';
 import Swal from 'sweetalert2';
 import moment from 'moment';
 import { baseURL } from '../../../../Services/api/baseURL';
 import Loader from '../../../Loader/Loader';
-import { FaTrash } from 'react-icons/fa';
+import { FaPen, FaTrash, FaTrashAlt } from 'react-icons/fa';
 
 
 const ProductsTable = () => {
@@ -49,29 +51,30 @@ const ProductsTable = () => {
     const [maincategory, setMainCategory] = useState([]);
     const [modal, setModal] = useState({
         isOpen: false,
-        type: 'add', // 'add', 'edit', 'delete'
+        type: 'add',
         selectedProduct: null
     });
     console.log(modal.selectedProduct, "selected product")
+
     const [formData, setFormData] = useState({
         productName: '',
         categoryId: '',
         subCategoryId: '',
-        weight: "",
-        // description: '',
-        image: [],               // for storing file object
-        imagePreview: [],          // for showing preview if needed
-        price: '',                 // number input
-        stock: ''                  // number input
+        weight: '',
+        weightUnit: '',
+        quantity: 1,
+        description: '',
+        productDetails: [],
+        image: [],
+        imagePreview: [],
+        price: '',
+        stock: ''
     });
-
-
     // Authentication
     const token = localStorage.getItem('token') ?
         JSON.parse(localStorage.getItem('token')) : null;
     const userRole = localStorage.getItem('role_name') ?
         JSON.parse(localStorage.getItem('role_name')) : null;
-
 
     // Fetch Products
     const fetchProducts = async (page = 1, limit = 10, search = '') => {
@@ -101,8 +104,6 @@ const ProductsTable = () => {
         }
     };
 
-
-
     // Fetch Categories & Subcategories, then Products
     const fetchInitialData = useCallback(async () => {
         try {
@@ -118,7 +119,6 @@ const ProductsTable = () => {
             setCategories(categoriesRes.data.mainCategories || []);
             setSubCategories(subCategoriesRes.data.categories || []);
 
-            // Fetch products after categories are set
             await fetchProducts(1);
         } catch (error) {
             Swal.fire({
@@ -129,13 +129,11 @@ const ProductsTable = () => {
         }
     }, [token]);
 
-    // Initial Load
     useEffect(() => {
         if (token) {
             fetchInitialData();
         }
     }, [token, fetchInitialData]);
-
 
     useEffect(() => {
         const delaySearch = setTimeout(() => {
@@ -145,66 +143,104 @@ const ProductsTable = () => {
         return () => clearTimeout(delaySearch);
     }, [searchTerm, products.perPage]);
 
-
     const openModal = (type, product = null) => {
-        setModal({
-            isOpen: true,
-            type,
-            selectedProduct: product
-        });
-        console.log(product, "product")
+        setModal({ isOpen: true, type, selectedProduct: product });
 
         if (product) {
+            const weightMatch = /^(\d+)([a-zA-Z]+)$/.exec(product.weight);
+            const weight = weightMatch ? weightMatch[1] : '';
+            const weightUnit = weightMatch ? weightMatch[2] : '';
+
             setFormData({
                 productName: product?.name || '',
                 price: product?.price || '',
                 stock: product?.stock || '',
-                weight: product?.weight || "",
-                // description: product.description || '',
+                weight,
+                weightUnit,
+                quantity: product?.quantity || 1,
+                description: product?.description || '',
                 categoryId: product?.main_category?._id || '',
                 subCategoryId: product?.category?._id || '',
-                image: [], // clear file input
-                imagePreview: Array.isArray(product?.image) ? product.image : []
+                image: [],
+                imagePreview: Array.isArray(product?.image) ? product.image : [],
             });
+
+            if (product?.itemDetails) {
+                try {
+                    const parsed = JSON.parse(product.itemDetails);
+                    if (Array.isArray(parsed)) setProductDetails(parsed);
+                } catch (err) {
+                    console.warn('Failed to parse itemDetails:', err);
+                }
+            }
         } else {
             resetForm();
         }
     };
 
-
     const closeModal = () => {
         setModal({ isOpen: false, type: 'add', selectedProduct: null });
         resetForm();
     };
+
     const resetForm = () => {
         setFormData({
             productName: '',
             price: '',
             stock: '',
-            weight: "",
-            // description: '',
+            weight: '',
+            weightUnit: '',
+            quantity: 1,
+            description: '',
             categoryId: '',
             subCategoryId: '',
             image: [],
             imagePreview: []
         });
+        setProductDetails([{ id: Date.now(), details: [{ id: Date.now() + 1, key: '', value: '' }] }]);
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        // ✅ Validate description
+        if (!formData.description?.trim()) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Missing Description',
+                text: 'Product description is required.'
+            });
+            return;
+        }
+
+        // ✅ Flatten and validate productDetails
+        const flatDetails = productDetails
+            .filter(detail => detail.key?.trim() && detail.value?.trim());
+
+        if (flatDetails.length === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Missing Product Details',
+                text: 'Please add at least one product detail (key + value).'
+            });
+            return;
+        }
+
+        // ✅ Prepare FormData
         const data = new FormData();
-
-        data.append('name', formData.productName); // ✅ match backend field "name"
-        data.append('main_category', formData.categoryId); // ✅ match backend field "main_category"
-        data.append('category', formData.subCategoryId); // Subcategory (if needed by backend)
-        // if (formData.description) data.append('description', formData.description);
+        data.append('name', formData.productName);
+        data.append('main_category', formData.categoryId);
+        data.append('category', formData.subCategoryId);
+        data.append('description', formData.description.trim());
         data.append('price', formData.price);
-        data.append('weight', formData.weight);
         data.append('stock', formData.stock);
+        data.append('weight', `${formData.weight}${formData.weightUnit}`);
+        data.append('quantity', formData.quantity);
+        data.append('itemDetails', JSON.stringify(flatDetails));
 
-        formData.image.forEach((imageFile) => {
-            data.append('image', imageFile);
+        // ✅ Add images to FormData
+        formData.image.forEach((file) => {
+            data.append('image', file);
         });
 
         try {
@@ -217,30 +253,35 @@ const ProductsTable = () => {
             await axios[method](endpoint, data, {
                 headers: {
                     Authorization: `Bearer ${token}`,
-                    'Content-Type': 'multipart/form-data',
-                },
+                    'Content-Type': 'multipart/form-data'
+                }
             });
 
             Swal.fire({
                 icon: 'success',
                 title: modal.type === 'add' ? 'Product Added' : 'Product Updated',
                 showConfirmButton: false,
-                timer: 1500,
+                timer: 1500
             });
 
             closeModal();
             fetchProducts(products.currentPage);
         } catch (error) {
+            console.error('Submit Error:', error);
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
-                text: error.response?.data?.message || 'Failed to submit product',
+                text: error.response?.data?.message || 'Failed to submit product'
             });
         }
     };
 
 
-    // Delete/Status Change Handler
+    const onFormSubmit = (e) => {
+        e.preventDefault();
+        handleSubmit(e);
+    };
+
     const handleDeleteProduct = async () => {
         try {
             await axios.delete(`${baseURL}/api/products/${modal.selectedProduct._id}`, {
@@ -272,9 +313,7 @@ const ProductsTable = () => {
             center: true,
             cell: row => {
                 const firstImage = Array.isArray(row.image) ? row.image[0] : row.image;
-
-                const imageUrl =
-                    firstImage?.startsWith('/uploads') ? `${baseURL}${firstImage}` : firstImage;
+                const imageUrl = firstImage?.startsWith('/uploads') ? `${baseURL}${firstImage}` : firstImage;
 
                 return firstImage ? (
                     <img
@@ -286,8 +325,7 @@ const ProductsTable = () => {
                     'No Image'
                 );
             }
-        }
-        ,
+        },
         {
             name: 'Product Name',
             selector: row => row.name,
@@ -321,12 +359,17 @@ const ProductsTable = () => {
             sortable: true,
             center: true,
         },
-        // {
-        //     name: 'Description',
-        //     selector: row => row.description,
-        //     sortable: false,
-        //     wrap: true,
-        // },
+        {
+            name: 'Description',
+            sortable: false,
+            wrap: true,
+            cell: row => (
+                <div className="line-clamp-2 max-w-xs text-sm text-gray-700">
+                    {row.description}
+                </div>
+            )
+        },
+
         {
             name: 'Created Date',
             selector: row => moment(row.createdAt).format('DD/MM/YYYY'),
@@ -334,40 +377,44 @@ const ProductsTable = () => {
             center: true,
         },
         {
-            name: 'Actions',
+            name: "Actions",
             cell: (row) => (
-                <div className="d-flex">
-                    <Button
-                        size="sm"
-                        className="me-2"
-                        onClick={() => openModal('edit', row)}
-                    >
-                        <Edit size={14} />
-                    </Button>
-                    {userRole === 'Admin' && (
-                        <Button
-                            size="sm"
-                            onClick={() => openModal('delete', row)}
-                        >
-                            <Trash2 size={14} />
-                        </Button>
-                    )}
+                <div
+                    className="d-flex justify-content-end align-items-center"
+                    style={{ marginRight: "20px" }}
+                >
+                    <div className="cursor-pointer">
+                        <UncontrolledDropdown className="action_dropdown">
+                            <DropdownToggle className="action_btn">
+                                <MoreVertical color="#000" size={16} />
+                            </DropdownToggle>
+                            <DropdownMenu>
+                                <DropdownItem
+                                    onClick={() => openModal('edit', row)}
+                                >
+                                    Update
+                                    <FaPen />
+                                </DropdownItem>
+                                <DropdownItem
+                                    className="delete_item"
+                                    onClick={() => openModal('delete', row)}>
+                                    Delete
+                                    <FaTrashAlt />
+                                </DropdownItem>
+                            </DropdownMenu>
+                        </UncontrolledDropdown>
+                    </div>
                 </div>
             ),
-            ignoreRowClick: true,
-            allowOverflow: true,
-            button: true,
-        }
+            right: true,
+        },
     ];
-
 
     const filteredSubCategories = useMemo(() => {
         return subCategories.filter(
             sub => sub?.main_category?._id === formData.categoryId
         );
     }, [subCategories, formData.categoryId]);
-
-
 
     const filteredProducts = (products.data || []).filter(item =>
         (item.productName || '').toLowerCase().includes((searchTerm || '').toLowerCase())
@@ -394,7 +441,28 @@ const ProductsTable = () => {
         }));
     };
 
-    console.log(formData, "formdata")
+    const [productDetails, setProductDetails] = useState([
+        { key: '', value: '' },
+    ]);
+
+    const handleChange = (index, field, value) => {
+        setProductDetails((prev) =>
+            prev.map((detail, i) =>
+                i === index ? { ...detail, [field]: value } : detail
+            )
+        );
+    };
+
+    const handleAddDetail = () => {
+        setProductDetails((prev) => [...prev, { key: '', value: '' }]);
+    };
+
+    const handleDeleteDetail = (index) => {
+        setProductDetails((prev) => prev.filter((_, i) => i !== index));
+    };
+
+
+
 
     return (
         <div>
@@ -438,62 +506,79 @@ const ProductsTable = () => {
 
 
             {/* Modal for Add/Edit Product */}
-            <Modal centered isOpen={modal.isOpen && ['add', 'edit'].includes(modal.type)} toggle={closeModal} className="store_modal">
+            <Modal
+                centered
+                isOpen={modal.isOpen && ['add', 'edit'].includes(modal.type)}
+                toggle={closeModal}
+                className="store_modal"
+                size="lg"
+            >
                 <ModalHeader toggle={closeModal}>
                     {modal.type === 'add' ? 'Add Product' : 'Edit Product'}
                 </ModalHeader>
                 <ModalBody>
-                    <Form onSubmit={handleSubmit}>
-                        <FormGroup>
-                            <Label>Category<span className="text-danger">*</span></Label>
-                            <Input
-                                type="select"
-                                value={formData.categoryId}
-                                onChange={(e) =>
-                                    setFormData((prev) => ({
-                                        ...prev,
-                                        categoryId: e.target.value,
-                                        subCategoryId: '' // reset subcategory when category changes
-                                    }))
-                                }
-                                required
-                            >
-                                <option value="">Select Category</option>
-                                {categories.map((cat) => (
-                                    <option key={cat._id} value={cat._id}>
-                                        {cat.name}
-                                    </option>
-                                ))}
-                            </Input>
-                        </FormGroup>
+                    <Form onSubmit={onFormSubmit}>
+                        <Row>
+                            <Col md={6}>
+                                <FormGroup>
+                                    <Label>
+                                        Category <span className="text-danger">*</span>
+                                    </Label>
+                                    <Input
+                                        type="select"
+                                        value={formData.categoryId}
+                                        onChange={(e) =>
+                                            setFormData((prev) => ({
+                                                ...prev,
+                                                categoryId: e.target.value,
+                                                subCategoryId: '',
+                                            }))
+                                        }
+                                        required
+                                    >
+                                        <option value="">Select Category</option>
+                                        {categories.map((cat) => (
+                                            <option key={cat._id} value={cat._id}>
+                                                {cat.name}
+                                            </option>
+                                        ))}
+                                    </Input>
+                                </FormGroup>
+                            </Col>
+
+                            <Col md={6}>
+                                <FormGroup>
+                                    <Label>
+                                        Sub Category <span className="text-danger">*</span>
+                                    </Label>
+                                    <Input
+                                        type="select"
+                                        value={formData.subCategoryId}
+                                        onChange={(e) =>
+                                            setFormData((prev) => ({
+                                                ...prev,
+                                                subCategoryId: e.target.value,
+                                            }))
+                                        }
+                                        disabled={!formData.categoryId}
+                                        required
+                                    >
+                                        <option value="">Select Sub Category</option>
+                                        {filteredSubCategories.map((subCat) => (
+                                            <option key={subCat._id} value={subCat._id}>
+                                                {subCat.name}
+                                            </option>
+                                        ))}
+                                    </Input>
+                                </FormGroup>
+                            </Col>
+                        </Row>
 
 
                         <FormGroup>
-                            <Label>Sub Category<span className="text-danger">*</span></Label>
-                            <Input
-                                type="select"
-                                value={formData.subCategoryId}
-                                onChange={(e) =>
-                                    setFormData((prev) => ({
-                                        ...prev,
-                                        subCategoryId: e.target.value,
-                                    }))
-                                }
-                                disabled={!formData.categoryId}
-                                required
-                            >
-                                <option value="">Select Sub Category</option>
-                                {filteredSubCategories.map((subCat) => (
-                                    <option key={subCat._id} value={subCat._id}>
-                                        {subCat.name}
-                                    </option>
-                                ))}
-                            </Input>
-                        </FormGroup>
-
-
-                        <FormGroup>
-                            <Label>Product Name<span className="text-danger">*</span></Label>
+                            <Label>
+                                Product Name <span className="text-danger">*</span>
+                            </Label>
                             <Input
                                 type="text"
                                 value={formData.productName}
@@ -508,54 +593,90 @@ const ProductsTable = () => {
                         </FormGroup>
 
                         <FormGroup>
-                            <Label>Weight<span className="text-danger">*</span></Label>
-                            <Input
-                                type="text"
-                                value={formData.weight}
-                                onChange={(e) =>
-                                    setFormData((prev) => ({
-                                        ...prev,
-                                        weight: e.target.value,
-                                    }))
-                                }
-                                required
-                            />
+                            <Label>
+                                Weight <span className="text-danger">*</span>
+                            </Label>
+                            <div className="d-flex gap-2">
+                                <Input
+                                    type="number"
+                                    min="0"
+                                    placeholder="Enter weight"
+                                    value={formData.weight}
+                                    onChange={(e) =>
+                                        setFormData((prev) => ({
+                                            ...prev,
+                                            weight: e.target.value,
+                                        }))
+                                    }
+                                    required
+                                />
+                                <Input
+                                    type="select"
+                                    value={formData.weightUnit}
+                                    onChange={(e) =>
+                                        setFormData((prev) => ({
+                                            ...prev,
+                                            weightUnit: e.target.value,
+                                        }))
+                                    }
+                                    required
+                                >
+                                    <option value="">Select Unit</option>
+                                    <option value="g">gm</option>
+                                    <option value="kg">kgs</option>
+                                    <option value="ml">ml</option>
+                                    <option value="L">L</option>
+                                </Input>
+                            </div>
                         </FormGroup>
+
+                        <Row>
+                            <Col md={6}>
+                                <FormGroup>
+                                    <Label>
+                                        Price <span className="text-danger">*</span>
+                                    </Label>
+                                    <Input
+                                        type="number"
+                                        value={formData.price}
+                                        onChange={(e) =>
+                                            setFormData((prev) => ({
+                                                ...prev,
+                                                price: e.target.value,
+                                            }))
+                                        }
+                                        required
+                                    />
+                                </FormGroup>
+                            </Col>
+                            <Col md={6}>
+                                <FormGroup>
+                                    <Label>
+                                        Stock <span className="text-danger">*</span>
+                                    </Label>
+                                    <Input
+                                        type="number"
+                                        value={formData.stock}
+                                        onChange={(e) =>
+                                            setFormData((prev) => ({
+                                                ...prev,
+                                                stock: e.target.value,
+                                            }))
+                                        }
+                                        required
+                                    />
+                                </FormGroup>
+                            </Col>
+                        </Row>
 
                         <FormGroup>
-                            <Label>Price<span className="text-danger">*</span></Label>
-                            <Input
-                                type="number"
-                                value={formData.price}
-                                onChange={(e) =>
-                                    setFormData((prev) => ({
-                                        ...prev,
-                                        price: e.target.value,
-                                    }))
-                                }
-                                required
-                            />
-                        </FormGroup>
-
-                        <FormGroup>
-                            <Label>Stock<span className="text-danger">*</span></Label>
-                            <Input
-                                type="number"
-                                value={formData.stock}
-                                onChange={(e) =>
-                                    setFormData((prev) => ({
-                                        ...prev,
-                                        stock: e.target.value,
-                                    }))
-                                }
-                                required
-                            />
-                        </FormGroup>
-
-                        {/* <FormGroup>
-                            <Label>Description</Label>
+                            <Label>
+                                Description <span className="text-danger">*</span>
+                            </Label>
                             <Input
                                 type="textarea"
+                                rows="4"
+                                placeholder="Enter product description"
                                 value={formData.description}
                                 onChange={(e) =>
                                     setFormData((prev) => ({
@@ -563,11 +684,79 @@ const ProductsTable = () => {
                                         description: e.target.value,
                                     }))
                                 }
+                                required
                             />
-                        </FormGroup> */}
+                        </FormGroup>
+
+
+                        {/* Product Details Section */}
+                        <FormGroup className="mt-4">
+                            <Row className="align-items-center mb-3">
+                                <Col md={6}>
+                                    <Label className="fw-bold mb-0">
+                                        Product Details <span className="text-danger">*</span>
+                                    </Label>
+                                </Col>
+                                <Col md={6} className="text-end">
+                                    <Button
+                                        type="button"
+                                        className="d-flex align-items-center ms-auto"
+                                        size="sm"
+                                        onClick={handleAddDetail}
+                                    >
+                                        <FiPlus className="me-1" /> Add Row
+                                    </Button>
+                                </Col>
+                            </Row>
+
+
+                            {productDetails.map((detail, index) => (
+                                <div key={index} className="flex flex-wrap items-center gap-2 mb-2">
+                                    {/* Title input */}
+                                    <div className="w-full md:w-5/12">
+                                        <Input
+                                            type="text"
+                                            placeholder="Enter Title"
+                                            value={detail.key}
+                                            onChange={(e) => handleChange(index, 'key', e.target.value)}
+                                            required
+                                        />
+                                    </div>
+
+                                    {/* Description input */}
+                                    <div className="w-full md:w-5/12">
+                                        <Input
+                                            type="text"
+                                            placeholder="Enter Description"
+                                            value={detail.value}
+                                            onChange={(e) => handleChange(index, 'value', e.target.value)}
+                                            required
+                                        />
+                                    </div>
+
+                                    {/* Delete Button */}
+                                    <div className="w-full md:w-1/12 flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleDeleteDetail(index)}
+                                            className="bg-red-500 hover:bg-red-600 text-white text-xs p-1 rounded w-9 h-8 flex items-center justify-center"
+                                        >
+                                            <FiTrash size={12} />
+                                        </button>
+                                    </div>
+                                </div>
+
+                            ))}
+
+
+                        </FormGroup>
+
+
 
                         <FormGroup>
-                            <Label>Images <span className="text-danger">*</span></Label>
+                            <Label>
+                                Images <span className="text-danger">*</span>
+                            </Label>
                             <Input
                                 type="file"
                                 accept="image/*"
@@ -575,7 +764,6 @@ const ProductsTable = () => {
                                 onChange={handleImageUpload}
                                 required={modal.type === 'add'}
                             />
-
                             {formData.imagePreview && formData.imagePreview.length > 0 && (
                                 <div className="mt-2 d-flex flex-wrap gap-2">
                                     {formData.imagePreview.map((preview, index) => (
@@ -590,8 +778,7 @@ const ProductsTable = () => {
                             )}
                         </FormGroup>
 
-
-                        <Row className="text-center">
+                        <Row className="text-center p-2">
                             <Button type="submit">
                                 {modal.type === 'add' ? 'Add Product' : 'Update Product'}
                             </Button>
