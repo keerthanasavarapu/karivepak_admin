@@ -143,7 +143,7 @@ const ProductsTable = () => {
         return () => clearTimeout(delaySearch);
     }, [searchTerm, products.perPage]);
 
-    const openModal = (type, product = null) => {
+     const openModal = (type, product = null) => {
         setModal({ isOpen: true, type, selectedProduct: product });
 
         if (product) {
