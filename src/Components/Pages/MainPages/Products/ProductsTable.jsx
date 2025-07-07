@@ -812,14 +812,17 @@ const ProductsTable = () => {
                                 </Button>
                             </Col>
                             <Col xs={6}>
-                                <Button
+                                <button
                                     type="button"
-                                    className="btn btn-danger w-100"
+                                    className="btn btn-red w-100"
                                     onClick={handleDeleteProduct}
+                                    style={{ backgroundColor: '#dc3545', color: '#fff' }}
+                                    disabled={products.loading}
+                                    data-testid="confirm-delete-button"
 
                                 >
-                                    Confirm Delete
-                                </Button>
+                                    Confirm Delete  
+                                </button>
                             </Col>
                         </Row>
                     </div>
