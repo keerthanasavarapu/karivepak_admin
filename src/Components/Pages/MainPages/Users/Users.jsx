@@ -1,15 +1,15 @@
 import { Fragment, useEffect, useState } from "react";
 import DataTable from "react-data-table-component";
-import { Col, Row, Button } from 'reactstrap';
+import { Col, Row, Button } from "reactstrap";
+import axios from "axios";
 import { baseURL } from "../../../../Services/api/baseURL";
 import Loader from "../../../Loader/Loader";
-import axios from "axios";
-import exportExcelUser from '../../../Reports/components/exportExcelCustomer';
+import exportExcelUser from "../../../Reports/components/exportExcelCustomer";
 
 const UserTable = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [usersData, setUsersData] = useState([]);
-    const [users,setUsers]=useState([])
+    const [allUsers, setAllUsers] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [pagination, setPagination] = useState({
         page: 1,
@@ -23,59 +23,71 @@ const UserTable = () => {
             selector: (row) => row?.name,
             sortable: true,
             cell: (row) => (
-              <div>
-                <div>{row?.name}</div>
-                <div style={{ fontSize: "12px", color: "gray" }}>{row?.mobile}</div>
-              </div>
+                <div>
+                    <div>{row?.name}</div>
+                    <div style={{ fontSize: "12px", color: "gray" }}>{row?.mobile}</div>
+                </div>
             ),
-          },
-          
+        },
         {
             name: "User Email",
-            selector: row => row?.email,
-            cell: (row) => row?.email === null ? "NA" : row?.email,
+            selector: (row) => row?.email || "NA",
             sortable: true,
         },
         {
-            name: "Kyc Status",
-            selector: row => row?.kyc === null ?"NA":row?.kyc?.status,
+            name: "KYC Status",
+            selector: (row) => (row?.kyc?.status ? row.kyc.status : "NA"),
             sortable: true,
         },
         {
             name: "Role",
-            selector: row => row?.role,
+            selector: (row) => row?.role,
             sortable: true,
             width: "120px",
-        }
-
+        },
     ];
 
-    const fetchUsers = async (page) => {
+    // Fetch paginated users
+    const fetchUsers = async (page = 1) => {
         setIsLoading(true);
         try {
-            const token = await JSON.parse(localStorage.getItem('token'));
-            const response = await axios.get(`${baseURL}/api/users`, {
-                params: {
-                    page: page,
-                    limit: pagination.perPage
-                },
+            const token = JSON.parse(localStorage.getItem("token"));
+            const response = await axios.get(`${baseURL}/api/user/getallusers`, {
+                params: { page, limit: pagination.perPage },
                 headers: { Authorization: `Bearer ${token}` },
             });
-            console.log(response,"response of users")
+
             if (response.status === 200) {
-                const usersData = response?.data?.users;
-                console.log(usersData,"====>>>>>>>>>>");
-                
-                setUsersData(usersData);
-                setPagination(prev => ({
+                const users = response.data.data;
+                const totalUsers = response.data.data.length || response.data.totalUsers || 0;
+
+                setUsersData(users);
+                setPagination((prev) => ({
                     ...prev,
-                    totalRows: response?.data?.totalUsers
+                    totalRows: totalUsers,
                 }));
             }
-        } catch (e) {
-            console.log(e);
+        } catch (error) {
+            console.error("Failed to fetch users", error);
         } finally {
             setIsLoading(false);
+        }
+    };
+
+    // Fetch all users for Excel export
+    const fetchAllUsers = async () => {
+        try {
+            const token = JSON.parse(localStorage.getItem("token"));
+            const response = await axios.get(`${baseURL}/api/user/getallusers?all=true`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            console.log(response)
+
+            if (response.status === 200) {
+                setAllUsers(response?.data?.data); // 'data' holds users in apiResponse
+            }
+        } catch (error) {
+            console.error("Failed to fetch all users", error);
         }
     };
 
@@ -83,71 +95,43 @@ const UserTable = () => {
         fetchUsers(pagination.page);
     }, [pagination.page, pagination.perPage]);
 
-
-    const fetchAllUsers = async (page) => {
-        setIsLoading(true);
-        try {
-            const token = await JSON.parse(localStorage.getItem('token'));
-            const response = await axios.get(`${baseURL}/api/users?all=true`, {
-  
-                headers: { Authorization: `Bearer ${token}` },
-                      
-            });
-            console.log(response,"response of users")
-            if (response.status === 200) {
-                const usersData = response?.data?.users;
-                console.log(usersData,"====>>>>>>>>>>");
-                
-                setUsers(usersData);
-
-            }
-        } catch (e) {
-            console.log(e);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-
-    console.log(users,"all users")
-
-    
     useEffect(() => {
-        fetchAllUsers();
+        fetchAllUsers(); // For Excel export
     }, []);
-
 
     const handleSearch = (e) => {
         setSearchTerm(e.target.value);
     };
 
-    const filteredData = usersData.filter((user) => {
-        const fullName = `${user?.firstName} ${user?.lastName}`.toLowerCase();
-        return fullName.includes(searchTerm.toLowerCase()) ||
-            user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            user?.address?.address?.toLowerCase().includes(searchTerm.toLowerCase());
-    });
-
-    const downloadExcelUserData = () => {
-        exportExcelUser(users);
-    };
+    const filteredData = searchTerm
+        ? allUsers.filter((user) => {
+            const name = `${user?.name}`.toLowerCase();
+            const email = user?.email?.toLowerCase() || "";
+            const address = user?.address?.address?.toLowerCase() || "";
+            return (
+                name.includes(searchTerm.toLowerCase()) ||
+                email.includes(searchTerm.toLowerCase()) ||
+                address.includes(searchTerm.toLowerCase())
+            );
+        })
+        : usersData;
 
     const handlePageChange = (page) => {
-        setPagination(prev => ({ ...prev, page }));
+        setPagination((prev) => ({ ...prev, page }));
     };
 
-    const handleRowsPerPageChange = (rowsPerPage) => {
-        setPagination({
-            page: 1,
-            perPage: rowsPerPage,
-            totalRows: pagination.totalRows
-        });
+    const handleRowsPerPageChange = (perPage) => {
+        setPagination({ page: 1, perPage, totalRows: pagination.totalRows });
+    };
+
+    const downloadExcelUserData = () => {
+        exportExcelUser(allUsers);
     };
 
     return (
         <Fragment>
-            <Row xxl={12} className='pb-2'>
-                <Col md={12} className='d-flex justify-content-between align-items-center mb-3'>
+            <Row className="pb-2">
+                <Col md={12} className="d-flex justify-content-between align-items-center mb-3">
                     <h4>Users</h4>
                     <div className="d-flex align-items-center">
                         <div className="mb-0 form-group position-relative search_outer d-flex align-items-center me-2">
@@ -161,13 +145,17 @@ const UserTable = () => {
                             />
                         </div>
                         <Button
-                            type='button'
-                            className='btn btn-primary d-flex align-items-center'
-                            style={{ minWidth: '136px' }}
+                            type="button"
+                            className="btn btn-primary d-flex align-items-center"
+                            style={{ minWidth: "136px" }}
                             onClick={downloadExcelUserData}
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="18" viewBox="0 0 14 18" fill="none">
-                                <path d="M9.33882 8.82071L9.33871 8.82059L9.32968 8.82962L8.125 10.0341V5.75L11.687 5.75C11.6871 5.75 11.6872 5.75 11.6874 5.75C12.1348 5.75058 12.5637 5.92857 12.8801 6.24494C13.1965 6.56141 13.3745 6.99049 13.375 7.43803V15.562C13.3745 16.0095 13.1965 16.4386 12.8801 16.7551C12.5636 17.0715 12.1345 17.2495 11.687 17.25H2.31303C1.86549 17.2495 1.43641 17.0715 1.11994 16.7551C0.803539 16.4387 0.625547 16.0097 0.625 15.5622V7.43778C0.625547 6.99032 0.80354 6.56135 1.11994 6.24494C1.43631 5.92857 1.86523 5.75058 2.31263 5.75C2.31277 5.75 2.3129 5.75 2.31303 5.75L5.875 5.75V10.0341L4.67032 8.82962L4.67043 8.8295L4.66118 8.82071C4.44849 8.61864 4.16527 8.50765 3.87192 8.51141C3.57855 8.51516 3.29827 8.63337 3.09082 8.84082C2.88337 9.04827 2.76516 9.32856 2.76141 9.62191C2.75765 9.91527 2.86864 10.1985 3.07071 10.4112L3.07059 10.4113L3.07965 10.4204L6.20465 13.5454L6.20477 13.5455C6.41572 13.7563 6.70176 13.8747 7 13.8747C7.29824 13.8747 7.58428 13.7563 7.79523 13.5455L7.79535 13.5454L10.9204 10.4204L10.9205 10.4205L10.9293 10.4112C11.1314 10.1985 11.2423 9.91527 11.2386 9.62191C11.2348 9.32855 11.1166 9.04827 10.9092 8.84082C10.7017 8.63337 10.4214 8.51516 10.1281 8.51141C9.83473 8.50765 9.55151 8.61864 9.33882 8.82071ZM7.08839 0.786612C7.11183 0.810053 7.125 0.841847 7.125 0.875V4.75H6.875V0.875C6.875 0.841849 6.88817 0.810054 6.91161 0.786612C6.93505 0.763169 6.96685 0.75 7 0.75C7.03315 0.75 7.06495 0.76317 7.08839 0.786612Z" fill="white" stroke="white" />
+                                <path
+                                    d="M9.33882 8.82071L8.125 10.0341V5.75H11.687C12.135 5.75 12.564 5.929 12.88 6.245C13.196 6.561 13.375 6.99 13.375 7.438V15.562C13.375 16.01 13.196 16.439 12.88 16.755C12.564 17.072 12.135 17.25 11.687 17.25H2.313C1.865 17.25 1.436 17.072 1.12 16.755C0.804 16.439 0.625 16.01 0.625 15.562V7.438C0.625 6.99 0.804 6.561 1.12 6.245C1.436 5.929 1.865 5.75 2.313 5.75H5.875V10.0341L4.67032 8.82962C4.44849 8.61864 4.16527 8.50765 3.87192 8.51141C3.57855 8.51516 3.29827 8.63337 3.09082 8.84082C2.88337 9.04827 2.76516 9.32856 2.76141 9.62191C2.75765 9.91527 2.86864 10.1985 3.07071 10.4112L6.20465 13.5454C6.41572 13.7563 6.70176 13.8747 7 13.8747C7.29824 13.8747 7.58428 13.7563 7.79523 13.5455L10.9293 10.4112C11.1314 10.1985 11.2423 9.91527 11.2386 9.62191C11.2348 9.32855 11.1166 9.04827 10.9092 8.84082C10.7017 8.63337 10.4214 8.51516 10.1281 8.51141C9.83473 8.50765 9.55151 8.61864 9.33882 8.82071ZM7.08839 0.786612C7.11183 0.810053 7.125 0.841847 7.125 0.875V4.75H6.875V0.875C6.875 0.841849 6.88817 0.810054 6.91161 0.786612C6.93505 0.763169 6.96685 0.75 7 0.75C7.03315 0.75 7.06495 0.76317 7.08839 0.786612Z"
+                                    fill="white"
+                                    stroke="white"
+                                />
                             </svg>
                             <span className="ms-2">Export Excel</span>
                         </Button>
@@ -179,8 +167,7 @@ const UserTable = () => {
                 <Loader />
             ) : (
                 <DataTable
-                    style={{ textAlign: 'right' }}
-                    data={filteredData}
+                    data={allUsers}
                     columns={userCols}
                     pagination
                     paginationServer
