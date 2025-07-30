@@ -44,7 +44,7 @@ function ContentManagementTable() {
     const [files, setFiles] = useState([]);
     const [previews, setPreviews] = useState([]);
     const [selectedImage, setSelectedImage] = useState('');
-    const [selectedImages, setSelectedImages] = useState([]);
+    const [selectedImages, setSelectedImages] = useState('');
     const [isPreview, setIsPreview] = useState(false);
     const inputRef = useRef();
     const [images,setImages] = useState([]);
@@ -118,7 +118,7 @@ function ContentManagementTable() {
         const token = await JSON.parse(localStorage.getItem("token"))
         try {
             setIsLoading(true);
-            let endPoint = '/api/content-management/list';
+            let endPoint = '/api/banner';
 
             const response = await axios.get(`${baseURL}${endPoint}?page=${currentPage}&limit=${perPage}&search_string=${searchTerm}`, {
                 headers: {
@@ -140,10 +140,10 @@ function ContentManagementTable() {
     }
 
     const deleteBrand = async (id) => {
-        if (window.confirm("Do You Want To Delete this Content?")) {
+         {
             const token = await JSON.parse(localStorage.getItem("token"))
             try {
-                const data = await axios.delete(`${baseURL}/api/content-management/${id}`, {
+                const data = await axios.delete(`${baseURL}/api/banner/${id}`, {
                     headers: {
                         Authorization: `${token}`,
                     }
@@ -197,6 +197,7 @@ function ContentManagementTable() {
     }
 
     const handleClickPreview = (imageUrl) => {
+        console.log(imageUrl)
           setSelectedImages(imageUrl)
           setIsPreview(!isPreview);
     };
@@ -243,7 +244,7 @@ function ContentManagementTable() {
 
                 if (id) {
 
-                    response = await axios.patch(`${baseURL}/api/content-management/${id}`,
+                    response = await axios.patch(`${baseURL}/api/banner/${id}/status`,
                         formData,
                         {
                             headers: {
@@ -254,7 +255,8 @@ function ContentManagementTable() {
                 }
                 else {
 
-                    response = await axios.post(`${baseURL}/api/content-management/add`,
+                    response = await axios.post(`${baseURL}/api/banner`,
+
                         formData,
                         {
                             headers: {
@@ -263,6 +265,7 @@ function ContentManagementTable() {
                             }
                         });
                 }
+
                 if (response?.data?.success) {
                     setLoading(false)
                     formik.resetForm();
@@ -582,14 +585,10 @@ function cropGifImage(image, crop, fileName) {
             center: false,
             cell: (row) => (
                 <>
-                    {row.images && row.images.length > 0 ? ( <Media className='d-flex align-items-center'>
-                        <Image attrImage={{ className: ' rounded-circle w-[30px] h-[30px]', src: `${row?.images[0] ? imageURL + row.images[0] : dummyImg}`, alt: 'Brand image' }} />
-                        <span onClick={() => { handleClickPreview(row.images.map(img => imageURL + img))}} className='ms-2 link-primary cursor-pointer'>   {capitalize('Click here to preview')}</span>
-                    </Media>):(
-                    <Media className='d-flex align-items-center'>
-                        <Image attrImage={{ className: ' rounded-circle w-[30px] h-[30px]', src: `${row?.image ? imageURL + row.image : dummyImg}`, alt: 'Brand image' }} />
-                        <span onClick={() => {handleClickPreview(row?.image ? [imageURL + row.image] : [dummyImg])}} className='ms-2 link-primary cursor-pointer'> {capitalize('CLick here to preview')}</span>
-                    </Media>)}
+          <Media className='d-flex align-items-center'>
+                        <Image attrImage={{ className: ' rounded-circle w-[30px] h-[30px]', src: `${row?.image || dummyImg}`, alt: 'Brand image' }} />
+                        <span onClick={() => { handleClickPreview(row.image)}} className='ms-2 link-primary cursor-pointer'>   {capitalize('Click here to preview')}</span>
+                    </Media>
                 </>
 
             )
@@ -624,7 +623,7 @@ function cropGifImage(image, crop, fileName) {
                             <MoreVertical color='#000' size={16} />
                         </DropdownToggle>
                         <DropdownMenu>
-                            <DropdownItem onClick={() => {
+                            {/* <DropdownItem onClick={() => {
                                 formik.resetForm();
                                 getEditData(row);
                                 setId(row?._id);
@@ -632,7 +631,7 @@ function cropGifImage(image, crop, fileName) {
                             }}>
                                 Edit
                                 <FaPen />
-                            </DropdownItem>
+                            </DropdownItem> */}
                             <DropdownItem className='delete_item' onClick={(rowData) => {
                                 deleteBrand(row?._id);
                             }}>
@@ -647,6 +646,8 @@ function cropGifImage(image, crop, fileName) {
             center: true,
         }
     ];
+
+    console.log(selectedImages)
     return (
         <Fragment>
             <CardBody style={{ padding: '15px' }}>
@@ -863,11 +864,15 @@ function cropGifImage(image, crop, fileName) {
             <CommonModal isOpen={isPreview} className="store_modal" toggler={() => setIsPreview(!isPreview)} size="lg">
                 <Container>
                     <Row>
-                    {selectedImages.map((image, index) => (
+                    {/* {selectedImages?.length > 0 ? selectedImages.map((image, index) => (
                         <Col xl={12} md={12} sm={12} key={index}>
                           <img src={image} className='w-100' alt={`banner-${index}`} />
                         </Col>
-                     ))}
+                     )) :  */}
+                      <Col xl={12} md={12} sm={12} >
+                          <img src={selectedImages} className='w-100' alt={`banner`} />
+                        </Col>
+                     {/* } */}
                     </Row>
                 </Container>
             </CommonModal>

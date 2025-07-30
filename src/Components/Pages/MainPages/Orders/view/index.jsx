@@ -16,8 +16,9 @@ function ViewOrder() {
 
     const getOrderDetails = async () => {
         const token = await JSON.parse(localStorage.getItem("token"));
+        console.log("token ededede", token);
         try {
-            await axios.get(`${orderURL}/get-order/${id}`, {
+            await axios.get(`${baseURL}/api/orders/${id}`, {
                 headers: {
                     Authorization: `${token}`
                 }
@@ -29,7 +30,7 @@ function ViewOrder() {
             })
         }
         catch (err) {
-            console.error(err)
+            console.error(err)              
         }
     };
 

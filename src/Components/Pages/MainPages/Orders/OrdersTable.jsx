@@ -66,19 +66,24 @@ const OrderTable = () => {
 
 
   const fetchOrders = async (page) => {
-    console.log(formattedStartDate, "formattedDate")
+    console.log("calling orders")
     setLoading(true);
     try {
-      const response = await axios.get(`${baseURL}/api/orders/filter`, {
+      const response = await axios.get(`${baseURL}/api/orders/admin`, {
         headers: {
           Authorization: `Bearer ${token}`,
-        },
-        params: {
-          month: String(formattedStartDate),
-          period: String(activeTabs),
-          status: String(activeTab)
         }
+
       });
+      //   , {     
+      //   params: {
+      //     month: String(formattedStartDate),
+      //     period: String(activeTabs),
+      //     status: String(activeTab)
+      //   }
+      // }
+      // );\
+      console.log(response)
       console.log(response.data, "response of orders")
 
       if (Array.isArray(response?.data?.orders)) {
@@ -122,10 +127,10 @@ const OrderTable = () => {
     }
   };
 
-  useEffect(() => {
+  // useEffect(() => {
 
-    fetchDeliveryPersons();
-  }, []);
+  //   fetchDeliveryPersons();
+  // }, []);
 
   useEffect(() => {
     fetchOrders();
@@ -133,12 +138,13 @@ const OrderTable = () => {
   }, [activeTab, activeTabs, formattedStartDate]);
 
   const getBadgeColor = (status, type) => {
-    if (type === "payment") {
+    console.log(status, type, "status and type in getBadgeColor")
+    if (type === "paymentStatus") {
       return (
         {
           pending: "danger",
           failed: "danger",
-          completed: "success",
+          paid: "success",
           success: "success",
         }[status] || "secondary"
       );
@@ -316,18 +322,20 @@ const OrderTable = () => {
       name: "Customer",
       selector: (row) => row.user?.name,
       sortable: true,
+      width: "200px",
       cell: (row) => (
-        <div>
+        <div >
           <div>{row.user?.name || "N/A"}</div>
-          <small className="text-muted">{row.user?.mobile || "N/A"}</small>
+          <small className="text-muted">{row.user?.email || "N/A"}</small >
+
         </div>
       ),
     },
     {
       name: "Items",
-      selector: (row) => row.subOrders?.length || 0,
+      selector: (row) => row.items.length || 0,
       sortable: true,
-      cell: (row) => row.subOrders?.length || 0,
+      cell: (row) => row.items.length || 0,
       width: "80px"
     },
 
@@ -345,26 +353,22 @@ const OrderTable = () => {
       ),
     },
     {
-      name: "Tax",
-      selector: (row) => row.taxDetails?.totalTax,
-      sortable: true,
+      name: "Delivery Address",
       cell: (row) => (
-        <span className="fw-bold">
-          ₹
-          {row.taxDetails?.totalTax?.toLocaleString("en-IN", {
-            maximumFractionDigits: 2,
-          })}
-        </span>
+        <div style={{ maxWidth: "200px" }}>
+          <small>{row.address?.city || "N/A"}</small>
+        </div>
       ),
     },
+
     {
       name: "Total Amount",
-      selector: (row) => row.totalAmount,
+      selector: (row) => row.grandTotal,
       sortable: true,
       cell: (row) => (
         <span className="fw-bold">
           ₹
-          {row.totalAmount?.toLocaleString("en-IN", {
+          {row.grandTotal?.toLocaleString("en-IN", {
             maximumFractionDigits: 2,
           })}
         </span>
@@ -382,41 +386,25 @@ const OrderTable = () => {
     },
     {
       name: "Order Status",
-      selector: (row) => row.orderStatus,
+      selector: (row) => row.status,
       sortable: true,
       cell: (row) => (
-        <Badge color={getBadgeColor(row.orderStatus, "placed")}>
-          {row.orderStatus?.toUpperCase()}
+        <Badge color={getBadgeColor(row.status, "placed")}>
+          {row.status?.toUpperCase()}
         </Badge>
       ),
     },
-    // {
-    //   name: "Delivery charges",
-    //   selector: row => row.deliveryCharge,
-    //   sortable: true,
-    //   cell: row => (
-    //     <span className="fw-bold">₹{row.deliveryCharge?.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
-    //   )
-    // },
-    // {
-    //   name: "Total Tax",
-    //   selector: row => row.taxDetails.totalTax,
-    //   sortable: true,
-    //   cell: row => (
-    //     <span className="fw-bold">₹{row.taxDetails?.totalTax?.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
-    //   )
-    // },
     {
       name: "Coupon Applied",
-      selector: (row) => row.couponCode,
+      selector: (row) => row.coupon,
       sortable: true,
       cell: (row) =>
-        row.couponCode ? (
+        row.coupon ? (
           <div className="d-flex flex-column gap-2">
             <Badge color="info" pill>
-              {row.couponCode}
+              {row.coupon}
             </Badge>
-            ₹{row.couponDiscount}
+            ₹{row.coupon}
           </div>
         ) : (
           "No Coupon"
@@ -428,100 +416,17 @@ const OrderTable = () => {
       sortable: true,
       cell: (row) => moment(row.createdAt).format("DD/MM/YYYY"),
     },
-  ];
 
-  const subOrderColumns = [
-    {
-      name: "Product",
-      selector: (row) => row.variantId?.title,
-      cell: (row) => (
-        <div
-          className="d-flex align-items-center text-inherit hover:text-blue-600 hover:underline hover:cursor-pointer "
-          onClick={() => navigate(`/orders/suborder/${row._id}`)}
-        >
-          <img
-            src={row.variantId?.images?.[0]}
-            alt={row.variantId?.title}
-            style={{
-              width: "50px",
-              height: "50px",
-              objectFit: "cover",
-              marginRight: "10px",
-              borderRadius: "4px",
-            }}
-          />
-          <div>
-            <div>{row.variantId?.title}</div>
-            <small className="text-muted">
-              Rental Period: {row.rentalPeriod?.toUpperCase()}
-            </small>
-          </div>
-        </div>
-      ),
-    },
-    {
-      name: "Owner",
-      selector: (row) => row.owner?.name,
-      cell: (row) => (
-        <div>
-          <div>{row.owner?.name}</div>
-          <small className="text-muted">{row.owner?.mobile}</small>
-        </div>
-      ),
-
-    },
-    {
-      name: "Quantity & Price",
-      cell: (row) => (
-        <div>
-          <div>Qty: {row.quantity}</div>
-          <span className="fw-bold">
-            ₹{row.price?.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
-          </span>
-        </div>
-      ),
-    },
-    {
-      name: "Delivery Address",
-      cell: (row) => (
-        <div style={{ maxWidth: "200px" }}>
-          <small>{row.deliveryDetails?.deliveryAddress?.full || "N/A"}</small>
-        </div>
-      ),
-    },
-    {
-      name: "Order Status",
-      cell: (row) => (
-        <div>
-          <Badge
-            color={getBadgeColor(row.orderStatus, "order")}
-            className="me-2"
-          >
-            {row.orderStatus?.toUpperCase()}
-          </Badge>
-        </div>
-      ),
-    },
-    {
-      name: "Delivery Status",
-      cell: (row) => (
-        <div>
-          <Badge color={getBadgeColor(row.deliveryStatus, "delivery")}>
-            {row.deliveryStatus?.toUpperCase()}
-          </Badge>
-        </div>
-      ),
-    },
     {
       name: "Actions",
       cell: (row) => (
-        <UncontrolledDropdown direction="down" className="mb-20">
+        <UncontrolledDropdown direction="down" >
           <DropdownToggle tag="span" className="p-2 cursor-pointer">
             <MoreVertical size={16} />
           </DropdownToggle>
           <DropdownMenu container="body" end>
             <DropdownItem
-              onClick={() => navigate(`/orders/suborder/${row._id}`)}
+              onClick={() => navigate(`/orders/${row._id}`)}
               style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', padding: "10px" }}
             >
               <Eye className="me-2" size={14} />
@@ -574,11 +479,84 @@ const OrderTable = () => {
     },
   ];
 
+  const subOrderColumns = [
+
+    {
+      name: "Product ID",
+      selector: (row) => row._id,
+      sortable: true,
+      width: "250px",
+    },
+    {
+      name: "Product Image",
+      selector: (row) => row.items?.product,
+      cell: (row) => (
+        <div
+          className="d-flex align-items-center text-inherit hover:text-blue-600 hover:underline hover:cursor-pointer "
+          onClick={() => navigate(`/orders/suborder/${row._id}`)}
+        >
+          <img
+            src={row.product?.image?.[0]}
+            alt={row.items?.product.name}
+            style={{
+              width: "50px",
+              height: "50px",
+              objectFit: "cover",
+              marginRight: "10px",
+              borderRadius: "4px",
+            }}
+          />
+          {/* <div>
+            <div>{row.variantId?.title}</div>
+            <small className="text-muted">
+              Rental Period: {row.rentalPeriod?.toUpperCase()}
+            </small>
+          </div> */}
+        </div>
+      ),
+    },
+    {
+      name: "Product Name",
+      selector: (row) => row.product?.name,
+      cell: (row) => (
+        <div>
+          <div>{row.product?.name}</div>
+          {/* <small className="text-muted">{row.user?.mobile}</small> */}
+        </div>
+      ),
+
+    },
+    {
+      name: "Quantity & Price",
+      cell: (row) => (
+        <div>
+          <div>Qty: {row.quantity}</div>
+          <span className="fw-bold">
+            ₹{row.price?.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+          </span>
+        </div>
+      ),
+    },
+
+    {
+      name: "Delivery Status",
+      cell: (row) => (
+        <div>
+          <Badge color={getBadgeColor(row.status, "delivery")}>
+            {row.status?.toUpperCase()}
+          </Badge>
+        </div>
+      ),
+    },
+
+  ];
+
   const ExpandedComponent = ({ data }) => (
+    console.log(data, "expanded data..."),
     <div className="p-4 bg-light">
-      <h6 className="mb-3 text-gray-900 fw-bold">Suborders</h6>
+      <h6 className="mb-3 text-gray-900 fw-bold">Product</h6>
       <DataTable
-        data={data.subOrders}
+        data={data.items || []}
         columns={subOrderColumns}
         dense
         className="bg-white rounded shadow-sm "
@@ -722,7 +700,7 @@ const OrderTable = () => {
 
       <DataTable
         columns={columns}
-        data={filteredOrders}
+        data={orderData}
         pagination
         paginationPerPage={10}
         paginationRowsPerPageOptions={[10, 25, 50]}
@@ -790,8 +768,9 @@ const OrderTable = () => {
                 >
                   <option value="">Select...</option>
                   <option value="placed">Placed</option>
-                  <option value="confirmed">Confirmed</option>
-                  <option value="cancelled">Cancelled</option>
+                  <option value="confirmed">Shipped</option>
+                  <option value="cancelled">Delivered</option>
+                  <option value="processing">Cancelled</option>
                 </Input>
               </FormGroup>
               {selectedStatus === "cancelled" && (

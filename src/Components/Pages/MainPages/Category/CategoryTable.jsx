@@ -332,7 +332,7 @@ const CategoryTable = () => {
     const columns = [
         {
             name: 'Image',
-            selector: row => row.images?.[0],
+            selector: row => row.image,
             sortable: false,
             center: true,
             cell: row => (
