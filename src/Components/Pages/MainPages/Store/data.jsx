@@ -13,7 +13,7 @@ import user9 from '../../../../assets/images/user/8.jpg';
 import user10 from '../../../../assets/images/user/9.jpg';
 import user11 from '../../../../assets/images/user/10.jpg';
 import user12 from '../../../../assets/images/user/11.png';
-import user13 from '../../../../assets/images/logo/Coopers Extra Stout 6btls 1.svg';
+// import user13 from '../../../../assets/images/logo/Coopers Extra Stout 6btls 1.svg';
 import { Edit2, Eye, EyeOff, Trash2 } from 'react-feather';
 import { centerCrop } from 'react-image-crop';
 import { Link } from 'react-router-dom';

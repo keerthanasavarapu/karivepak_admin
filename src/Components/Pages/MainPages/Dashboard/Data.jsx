@@ -37,7 +37,7 @@ export const Captiontabledata = [
         Stock: 150,
         StockStatus: "In Stock",
         TotalSales: 200,
-        image: '../../../../assets/images/logo/Coopers Extra Stout 6btls 1.svg'
+        // image: '../../../../assets/images/logo/Coopers Extra Stout 6btls 1.svg'
 
     },
     {
@@ -48,7 +48,7 @@ export const Captiontabledata = [
         Stock: 350,
         StockStatus: "Low Stock",
         TotalSales: 200,
-        image: '../../../../assets/images/logo/Coopers Extra Stout 6btls 1.svg'
+        // image: '../../../../assets/images/logo/Coopers Extra Stout 6btls 1.svg'
 
 
     }, {
@@ -59,7 +59,7 @@ export const Captiontabledata = [
         Stock: 500,
         StockStatus: "Out Of Stock",
         TotalSales: 250,
-        image: '../../../../assets/images/logo/Coopers Extra Stout 6btls 1.svg'
+        // image: '../../../../assets/images/logo/Coopers Extra Stout 6btls 1.svg'
 
 
     },
@@ -72,7 +72,7 @@ export const OrdersData = [
         Total: 150,
         DeliveryDate: "20/1/2024",
         Qty: 5,
-        image: '../../../../assets/images/logo/Coopers Extra Stout 6btls 1.svg'
+        // image: '../../../../assets/images/logo/Coopers Extra Stout 6btls 1.svg'
 
 
     },
@@ -83,7 +83,7 @@ export const OrdersData = [
         Total: 500,
         DeliveryDate: "20/1/2024",
         Qty: 2,
-        image: '../../../../assets/images/logo/Coopers Extra Stout 6btls 1.svg'
+        // image: '../../../../assets/images/logo/Coopers Extra Stout 6btls 1.svg'
 
 
     },
@@ -94,7 +94,7 @@ export const OrdersData = [
         Total: 550,
         DeliveryDate: "20/1/2024",
         Qty: 3,
-        image: '../../../../assets/images/logo/Coopers Extra Stout 6btls 1.svg'
+        // image: '../../../../assets/images/logo/Coopers Extra Stout 6btls 1.svg'
 
 
     },

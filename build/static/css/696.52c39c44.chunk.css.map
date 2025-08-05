@@ -1,0 +1,1 @@
+{"version":3,"file":"static/css/696.52c39c44.chunk.css","mappings":"AAEI,oCACI","sources":["Components/TransactionsCountCard/style.scss"],"sourcesContent":["\r\n.product_header_container{\r\n    .col-xl-3 {\r\n        width: 20%;\r\n    }\r\n}"],"names":[],"sourceRoot":""}
