@@ -441,9 +441,7 @@ const ProductsTable = () => {
         }));
     };
 
-    const [productDetails, setProductDetails] = useState([
-        { key: '', value: '' },
-    ]);
+    const [productDetails, setProductDetails] = useState([{ key: '', value: '' }, ]);
 
     const handleChange = (index, field, value) => {
         setProductDetails((prev) =>
@@ -451,6 +449,8 @@ const ProductsTable = () => {
                 i === index ? { ...detail, [field]: value } : detail
             )
         );
+    
+
     };
 
     const handleAddDetail = () => {

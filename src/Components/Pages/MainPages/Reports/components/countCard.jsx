@@ -55,7 +55,7 @@ function ReportsCountCard({ data, activeTab }) {
                                     </svg> Total Received Payments
                                 </H6>
                                 <H3 attrH3={{ className: "mb-0 mt-3 fw-bolder" }}>
-                                    $ {data?.total_received_payments?.toFixed(2) || 0}
+                                    ₹ {data?.total_received_payments?.toFixed(2) || 0}
                                 </H3>
                             </CardBody>
                         </Card>
@@ -71,7 +71,7 @@ function ReportsCountCard({ data, activeTab }) {
                                     </svg> Daily Average Orders
                                 </H6>
                                 <H3 attrH3={{ className: "mb-0 mt-3 fw-bolder" }}>
-                                    $ {data?.daily_average_orders?.toFixed(2) || 0}
+                                    ₹ {data?.daily_average_orders?.toFixed(2) || 0}
                                 </H3>
                             </CardBody>
                         </Card>
@@ -87,7 +87,7 @@ function ReportsCountCard({ data, activeTab }) {
                                     </svg> Total Pending Payments
                                 </H6>
                                 <H3 attrH3={{ className: "mb-0 mt-3 fw-bolder" }}>
-                                    ${data?.total_pending_payments?.toFixed(2) || 0}
+                                    ₹ {data?.total_pending_payments?.toFixed(2) || 0}
                                 </H3>
                             </CardBody>
                         </Card>
@@ -103,7 +103,7 @@ function ReportsCountCard({ data, activeTab }) {
                                     </svg> Gross Income
                                 </H6>
                                 <H3 attrH3={{ className: "mb-0 mt-3 fw-bolder" }}>
-                                    ${data?.gross_income?.toFixed(2) || 0}
+                                    ₹ {data?.gross_income?.toFixed(2) || 0}
                                 </H3>
                             </CardBody>
                         </Card>
@@ -119,7 +119,7 @@ function ReportsCountCard({ data, activeTab }) {
                                     </svg> Gross Profit Percentage
                                 </H6>
                                 <H3 attrH3={{ className: "mb-0 mt-3 fw-bolder" }}>
-                                    {data?.gross_profit_percentage?.toFixed(2) || 0}%
+                                    {data?.gross_profit_percentage?.toFixed(2) || 0} %
                                 </H3>
                             </CardBody>
                         </Card>
@@ -145,7 +145,7 @@ function ReportsCountCard({ data, activeTab }) {
                                 <H3 attrH3={{ className: 'mb-0 mt-3 fw-bolder d-flex justify-between items-center' }}>
                                     {totalItemsSoldSum}
                                     <span className="count_card_amount">
-                                        ${totalSalesSum}
+                                        ₹ {totalSalesSum}
                                     </span>
                                 </H3>
                             </CardBody>
@@ -169,7 +169,7 @@ function ReportsCountCard({ data, activeTab }) {
                                         <H3 attrH3={{ className: 'mb-0 mt-3 fw-bolder d-flex justify-between items-center' }}>
                                             {el?.totalItemsSold ? el?.totalItemsSold : 0}
                                             <span className="count_card_amount">
-                                                ${el?.totalSales}
+                                                 ₹ {el?.totalSales}
                                             </span>
                                         </H3>
                                     </CardBody>

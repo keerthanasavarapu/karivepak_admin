@@ -41,7 +41,7 @@ const DeliveryPersonTable = () => {
         const handleDeliveryDelete=async(id)=>{
             try {
             const token = await JSON.parse(localStorage.getItem('token'));
-            const response=await axios.delete(`${baseURL}/api/users/delivery-person/${id}`);
+            const response=await axios.delete(`${baseURL}/api/user/delivery-person/${id}`);
             console.log(response,"response of delivery delete");
                 Swal.fire({
                     title:"Done",
@@ -69,7 +69,7 @@ const DeliveryPersonTable = () => {
         },
         {
             name: "Mobile",
-            selector: row => row?.mobile,
+            selector: row => row?.mobile_number,
             sortable: true,
         },
         {
@@ -120,14 +120,14 @@ const DeliveryPersonTable = () => {
         setIsLoading(true);
         try {
             const token = await JSON.parse(localStorage.getItem('token'));
-            const response = await axios.get(`${baseURL}/api/users/delivery-persons`, {
+            const response = await axios.get(`${baseURL}/api/user/delivery-persons`, {
                 params: {
                     page: page,
                     limit: pagination.perPage
                 },
                 headers: { Authorization: `Bearer ${token}` },
             });
-            console.log(response)
+            console.log("getttdervv",response)
             if (response.status === 200) {
                 setDeliveryData(response?.data?.deliveryPersons);
                 setPagination(prev => ({
@@ -174,7 +174,7 @@ const DeliveryPersonTable = () => {
         setIsLoading(true);
         try {
             const token = await JSON.parse(localStorage.getItem('token'));
-            await axios.post(`${baseURL}/api/users/register-delivery-person`, formData, {
+            await axios.post(`${baseURL}/api/user/register-delivery-person`, formData, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             setIsModalOpen(false);

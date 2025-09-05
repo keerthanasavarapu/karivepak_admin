@@ -159,15 +159,15 @@ export const MENUITEMS = [
         ],
         // roles: ['Admin']
       },
-      {
-        title: "Posts",
-        icon: "store",
-        type: "link",
-        path: `/posts`,
-        badge: "badge badge-light-danger",
-        active: false,
-        // roles: ['admin'],
-      },
+      // {
+      //   title: "Posts",
+      //   icon: "store",
+      //   type: "link",
+      //   path: `/posts`,
+      //   badge: "badge badge-light-danger",
+      //   active: false,
+      //   roles: ['admin'],
+      // },
       {
         title: "Transaction",
         icon: "report",

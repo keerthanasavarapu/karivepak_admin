@@ -20,7 +20,7 @@ const DeliveryForm = ({
 }) => {
     const [formData, setFormData] = useState({
         name: editData ? editData.name : '',
-        mobile: editData ? editData.mobile : ''
+        mobile: editData ? editData.mobile_number : ''
     });
 
     const handleInputChange = (e) => {
@@ -66,8 +66,8 @@ const DeliveryForm = ({
                             </Label>
                             <Input
                                 type="tel"
-                                name="mobile"
-                                value={formData.mobile}
+                                name="mobile_number"
+                                value={formData.mobile_number}
                                 onChange={handleInputChange}
                                 placeholder="Enter mobile number"
                                 pattern="[0-9]{10}"

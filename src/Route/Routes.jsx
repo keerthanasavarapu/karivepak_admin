@@ -36,6 +36,7 @@ import Coupons from '../Components/Pages/MainPages/Coupons';
 import InventoryLog from '../Components/Pages/MainPages/Stocks/InventoryLog';
 import Posts from '../Components/Pages/MainPages/Posts/index'
 import Services from '../Components/Pages/MainPages/Services/Services';
+import DeliveryPersonTable from '../Components/Pages/MainPages/Users/DeliveryPersonTable';
 
 
 // new comps
@@ -82,6 +83,7 @@ let routes = [
   // promotion route start
   // { path: `/promotions`, Component: <Promotions /> },
    { path: `/users`, Component: <Users /> },
+   { path: `/delivery-person`, Component: <DeliveryPersonTable /> },
   // post route start
 { path: `/posts`, Component: <Posts /> },
   // Stock Route Start 
