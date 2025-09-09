@@ -37,6 +37,7 @@ import InventoryLog from '../Components/Pages/MainPages/Stocks/InventoryLog';
 import Posts from '../Components/Pages/MainPages/Posts/index'
 import Services from '../Components/Pages/MainPages/Services/Services';
 import DeliveryPersonTable from '../Components/Pages/MainPages/Users/DeliveryPersonTable';
+import Invoice from "../Components/Application/Ecommerce/Invoice/index"
 
 
 // new comps
@@ -114,8 +115,9 @@ let routes = [
   { path: `/coupons`, Component: <Coupons /> },
 
   { path: '/', Component: <Dashboard /> },
-  { path: `*`, Component: <ErrorPage4 /> }
+  { path: `*`, Component: <ErrorPage4 /> },
 
+  { path: `/invoice`, Component: <Invoice /> },
 ];
 
 

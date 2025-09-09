@@ -59,6 +59,7 @@ function ViewOrder() {
     const statusColors = {
         placed: "primary",
         accepted: "info",
+        confirmed: "info",
         processing: "warning",
         delivered: "success",
         rejected: "danger",
@@ -113,7 +114,7 @@ function ViewOrder() {
                 <div className="order_details">
                     <Row className="d-flex justify-content-center">
                         {/* Order Info */}
-                        <Col lg={4} md={6} className="d-flex">
+                        <Col lg={4} md={6} sm={12} xs={12} className="d-flex mb-3">
                             <Card className="flex-fill card-equal-height">
                                 <CardHeader>
                                     <h5> Order Details</h5>
@@ -128,9 +129,7 @@ function ViewOrder() {
                                             <tr>
                                                 <th>Placed At :</th>
                                                 <td>
-                                                    {moment(orderDetails?.placedAt).format(
-                                                        "DD MMM YYYY, h:mm A"
-                                                    )}
+                                                    {moment(orderDetails?.placedAt).format("DD MMM YYYY, h:mm A")}
                                                 </td>
                                             </tr>
                                             <tr>
@@ -140,6 +139,10 @@ function ViewOrder() {
                                                         ? capitalizeFirstLetter(orderDetails?.status)
                                                         : "N/A"}
                                                 </td>
+                                            </tr>
+                                            <tr>
+                                                <th>Previous Status :</th>
+                                                <td>{orderDetails?.previousStatus || "N/A"}</td>
                                             </tr>
                                             <tr>
                                                 <th>Payment Method :</th>
@@ -186,6 +189,128 @@ function ViewOrder() {
                                                     </span>
                                                 </td>
                                             </tr>
+                                        </tbody>
+                                    </Table>
+                                </CardBody>
+                            </Card>
+                        </Col>
+
+                        {/* Customer Address */}
+                        <Col lg={4} md={6} sm={12} className="d-flex">
+                            <Card className="flex-fill card-equal-height">
+                                <CardHeader>
+                                    <h5>Delivery Address</h5>
+                                </CardHeader>
+                                <CardBody>
+                                    <Table className="detail_table">
+                                        <tbody>
+                                            <tr>
+                                                <th>Name :</th>
+                                                <td>{orderDetails?.address?.name}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Mobile :</th>
+                                                <td>{orderDetails?.address?.mobile_number}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Address :</th>
+                                                <td>
+                                                    {orderDetails?.address?.address},{" "}
+                                                    {orderDetails?.address?.city},{" "}
+                                                    {orderDetails?.address?.state} -{" "}
+                                                    {orderDetails?.address?.pincode}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th>Country :</th>
+                                                <td>{orderDetails?.address?.country}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Type :</th>
+                                                <td>{orderDetails?.address?.type}</td>
+                                            </tr>
+                                        </tbody>
+                                    </Table>
+                                </CardBody>
+                            </Card>
+                        </Col>
+
+                        {/* Payment Info */}
+                        <Col lg={4} md={6} sm={12} xs={12} className="d-flex mb-3">
+                            <Card className="flex-fill card-equal-height">
+                                <CardHeader>
+                                    <h5>Payment Details</h5>
+                                </CardHeader>
+                                <CardBody>
+                                    <Table className="detail_table">
+                                        <tbody>
+                                            <tr>
+                                                <th>Transaction ID :</th>
+                                                <td>{orderDetails?.payment?.transactionId}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Payment ID :</th>
+                                                <td>{orderDetails?.paymentId}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Razorpay Order ID :</th>
+                                                <td>{orderDetails?.paymentResponse?.orderId}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Signature :</th>
+                                                <td className="text-break">
+                                                    {orderDetails?.paymentResponse?.signature}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <th>Payment Date :</th>
+                                                <td>
+                                                    {moment(orderDetails?.paymentDate).format("DD MMM YYYY, h:mm A")}
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </Table>
+                                </CardBody>
+                            </Card>
+                        </Col>
+
+                        {/* Timeline */}
+                        <Col lg={8} md={12} sm={12}>
+                            <Card>
+                                <CardHeader>
+                                    <h5>Delivery Timeline</h5>
+                                </CardHeader>
+                                <CardBody>
+                                    <Table>
+                                        <thead>
+                                            <tr>
+                                                <th>Status</th>
+                                                <th>Note</th>
+                                                <th>Updated By</th>
+                                                <th>Time</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {orderDetails?.deliveryTimeline?.length > 0 ? (
+                                                orderDetails.deliveryTimeline.map((item, index) => (
+                                                    <tr key={index}>
+                                                        <td>{capitalizeFirstLetter(item?.status)}</td>
+                                                        <td>{item?.note}</td>
+                                                        <td>{item?.updatedBy}</td>
+                                                        <td>
+                                                            {moment(item?.timestamp).format(
+                                                                "DD MMM YYYY, h:mm A"
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            ) : (
+                                                <tr>
+                                                    <td colSpan="4" className="text-center">
+                                                        No timeline found
+                                                    </td>
+                                                </tr>
+                                            )}
                                         </tbody>
                                     </Table>
                                 </CardBody>

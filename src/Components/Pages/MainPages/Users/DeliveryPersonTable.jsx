@@ -41,7 +41,7 @@ const DeliveryPersonTable = () => {
         const handleDeliveryDelete=async(id)=>{
             try {
             const token = await JSON.parse(localStorage.getItem('token'));
-            const response=await axios.delete(`${baseURL}/api/user/delivery-person/${id}`);
+            const response=await axios.delete(`${baseURL}/api/auth/delivery-persons/${id}`);
             console.log(response,"response of delivery delete");
                 Swal.fire({
                     title:"Done",
@@ -120,7 +120,7 @@ const DeliveryPersonTable = () => {
         setIsLoading(true);
         try {
             const token = await JSON.parse(localStorage.getItem('token'));
-            const response = await axios.get(`${baseURL}/api/user/delivery-persons`, {
+            const response = await axios.get(`${baseURL}/api/auth/delivery-persons`, {
                 params: {
                     page: page,
                     limit: pagination.perPage
@@ -174,7 +174,7 @@ const DeliveryPersonTable = () => {
         setIsLoading(true);
         try {
             const token = await JSON.parse(localStorage.getItem('token'));
-            await axios.post(`${baseURL}/api/user/register-delivery-person`, formData, {
+            await axios.post(`${baseURL}/api/auth/register-delivery-person`, formData, {
                 headers: { Authorization: `Bearer ${token}` },
             });
             setIsModalOpen(false);

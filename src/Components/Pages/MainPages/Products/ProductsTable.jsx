@@ -622,7 +622,7 @@ const ProductsTable = () => {
                                     required
                                 >
                                     <option value="">Select Unit</option>
-                                    <option value="g">gm</option>
+                                    <option value="g">grams</option>
                                     <option value="kg">kgs</option>
                                     <option value="ml">ml</option>
                                     <option value="L">L</option>

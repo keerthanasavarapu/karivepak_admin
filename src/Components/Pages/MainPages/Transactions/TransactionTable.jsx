@@ -1,4 +1,4 @@
-import React, { Fragment, useCallback, useEffect, useState } from "react";
+import React, { Fragment, useEffect, useState } from "react";
 import DataTable from "react-data-table-component";
 import { Image } from "../../../../AbstractElements";
 import {
@@ -14,12 +14,12 @@ import {
   UncontrolledDropdown,
 } from "reactstrap";
 import { MoreVertical } from "react-feather";
-import { FaEye } from 'react-icons/fa';
+import { FaEye } from "react-icons/fa";
 
 import axios from "axios";
 import "react-dropdown/style.css";
 import { useNavigate } from "react-router-dom";
-import { baseURL, imageURL, variantsBaseURL } from "../../../../Services/api/baseURL";
+import { baseURL, imageURL } from "../../../../Services/api/baseURL";
 
 import dummyImg from "../../../../assets/images/product/2.png";
 import Loader from "../../../Loader/Loader";
@@ -27,69 +27,46 @@ import moment from "moment";
 
 const TransactionTable = () => {
   const navigate = useNavigate();
-  const userRole = JSON.parse(localStorage.getItem('role_name'));
+  const userRole = JSON.parse(localStorage.getItem("role_name"));
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [BasicTab, setBasicTab] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [transactions, setTransactions] = useState([
-    {
-      status: "pending",
-      transactionId: "123",
-      customerName: "Ravi",
-      quantity: 7,
-      date: new Date(),
-      amount: 200,
-      paymentData: {
-        cardType: "visa",
-        paymentType: "card",
-        cardNumber: "4242",
-      },
-    },
-    {
-      status: "recieved",
-      transactionId: "124",
-      customerName: "Ravi",
-      quantity: 7,
-      date: new Date(),
-      amount: 199,
-      paymentData: {
-        paymentType: "paypal",
-        cardNumber: "4242",
-        address: "ravi@gk.com",
-      },
-    },
-  ]);
+  const [BasicTab, setBasicTab] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [transactions, setTransactions] = useState([]);
 
-
+  // Fetch transactions
   const fetchItems = async () => {
     setIsLoading(true);
-    const token = await JSON.parse(localStorage.getItem("token"));
+    const token = JSON.parse(localStorage.getItem("token"));
 
     try {
       let params = {};
 
-      if (startDate && endDate && BasicTab !== 'all') {
+      if (startDate && endDate && BasicTab !== "all") {
         params = {
           start_date: moment(startDate).format("YYYY-MM-DD"),
-          end_date: moment(endDate).format("YYYY-MM-DD")
+          end_date: moment(endDate).format("YYYY-MM-DD"),
         };
       }
 
-      const res = await axios.get(`${baseURL}/api/order/get-all-transactions`, {
-        params: params,
+      const url =
+        userRole === "admin"
+          ? `${baseURL}/api/transaction/get-all-transactions`
+          : `${baseURL}/api/transactions/my`;
+
+      const res = await axios.get(url, {
+        params,
         headers: {
           Authorization: `${token}`,
         },
       });
-      const data = res?.data?.data;
-      setIsLoading(false);
+
+      const data = res?.data?.data || [];
       setTransactions(data.reverse());
     } catch (error) {
-      setIsLoading(false);
-    }
-    finally {
+      console.error("Error fetching transactions:", error);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -98,6 +75,7 @@ const TransactionTable = () => {
     fetchItems();
   }, [startDate, endDate]);
 
+  // Handle Tabs (date filters)
   const handleTab = (step) => {
     setBasicTab(step);
     const { startDate, endDate } = calculateDates(step);
@@ -108,27 +86,26 @@ const TransactionTable = () => {
   const calculateDates = (step) => {
     const today = new Date();
     let startDate = new Date();
-    let endDate = new Date();
 
     switch (step) {
-      case 'all':
+      case "all":
+        return { startDate: "", endDate: "" };
+      case "today":
+        startDate.setDate(today.getDate());
         break;
-      case 'today':
-        startDate.setDate(today.getDate())
-        break;
-      case '7d': // 7D
+      case "7d":
         startDate.setDate(today.getDate() - 7);
         break;
-      case '1m': // 1M
+      case "1m":
         startDate.setMonth(today.getMonth() - 1);
         break;
-      case '3m': // 3M
+      case "3m":
         startDate.setMonth(today.getMonth() - 3);
         break;
-      case '6m': // 6M
+      case "6m":
         startDate.setMonth(today.getMonth() - 6);
         break;
-      case '1yr': // 1Y
+      case "1yr":
         startDate.setFullYear(today.getFullYear() - 1);
         break;
       default:
@@ -138,156 +115,109 @@ const TransactionTable = () => {
     return { startDate, endDate: today };
   };
 
+  // Table Columns
   const orderColumns = [
     {
       name: "Transaction Id",
-      selector: (row) => row?._id,
+      selector: (row) => row._id,
       center: true,
-      width: "150px",
-      cell: (row) => row?._id,
+      width: "180px",
     },
     {
       name: "Customer Name",
-      selector: (row) => `${ row?.customer_info?.first_name}`,
+      selector: (row) => row?.userId?.name || "N/A",
       cell: (row) => (
-        <>
-          <Media className="d-flex">
-            {/* <Image
-              attrImage={{
-                className: " img-30 me-3",
-                src: `${row?.variantImage ? imageURL + row?.customerImage : dummyImg
-                  }`,
-                alt: "Generic placeholder image",
-              }}
-            /> */}
-            <Media body className="align-self-center">
-              <div>
-                {(
-                  row?.customer_info?.first_name !== undefined &&
-                  row?.customer_info?.last_name !== undefined) ?
-                  (row?.customer_info?.first_name + ' ' + row?.customer_info?.last_name) :
-                  'N/A'}
-              </div>
-            </Media>
+        <Media className="d-flex">
+          <Image
+            attrImage={{
+              className: " img-30 me-3",
+              src: row?.userId?.profileImage
+                ? imageURL + row.userId.profileImage
+                : dummyImg,
+              alt: "User",
+            }}
+          />
+          <Media body className="align-self-center">
+            {row?.userId?.name || "N/A"}
           </Media>
-        </>
+        </Media>
       ),
       sortable: true,
       center: true,
     },
     {
-      name: "No Items",
-      selector: (row) => row?.quantity,
-      sortable: true,
+      name: "Order Id",
+      selector: (row) => row?.orderId?._id || "N/A",
       center: true,
-      cell: (row) => (row?.no_of_items ? row?.no_of_items : 0),
     },
     {
       name: "Date & Time",
-      selector: (row) => row?.date,
+      selector: (row) => row.createdAt,
       sortable: true,
       center: true,
-      cell: (row) => moment(row.createdAt).format('DD MMM YYYY, hh:mmA')
+      cell: (row) => moment(row.createdAt).format("DD MMM YYYY, hh:mmA"),
     },
-
     {
       name: "Amount",
       selector: (row) => row.amount,
       sortable: true,
       center: true,
-      cell: (row) => `$${(row?.amount ? row?.amount : 0)}`,
-    },
-    {
-      name: "Payment Type",
-      selector: (row) => `${row?.paymentData}`,
-      sortable: true,
-      center: true,
-      cell: (row) => (
-        <>
-          <Media className="d-flex">
-            {/* <Image
-              attrImage={{
-                className: " img-30 me-3",
-                src: `${row?.variantImage ? imageURL + row?.customerImage : dummyImg
-                  }`,
-                alt: "Generic placeholder image",
-              }}
-            /> */}
-            <Media body className="align-self-center">
-              <div>
-                {/* {row?.paymentData?.paymentType === "paypal"
-                  ? row?.paymentData?.address
-                  : `****${row?.paymentData?.cardNumber}`} */}{
-                  row?.payment_Type ? row?.payment_Type : "N/A"
-                }
-              </div>
-            </Media>
-          </Media>
-        </>
-      ),
+      cell: (row) => `₹${row.amount}`,
     },
     {
       name: "Status",
-      selector: (row) => `${row?.status}`,
+      selector: (row) => row.transactionStatus,
       sortable: true,
       center: true,
-      cell: (row) =>
-        row?.transaction_status === "completed" ? (
-          <div
-            style={{
-              background: "#b7d5ac",
-              padding: "6px 14px",
-              borderRadius: "20px",
-              color: "#0e7a0d",
-              fontWeight: "bold",
-              textTransform: "capitalize",
-            }}
-          >
-            {row.transaction_status}
-          </div>
-        ) : (
-          <div
-            style={{
-              background: "#fff1dc",
-              padding: "6px 14px",
-              borderRadius: "20px",
-              color: "#EF940B",
-              textTransform: "capitalize",
-            }}
-          >
-            {row.transaction_status}
-          </div>
-        ),
+      cell: (row) => (
+        <div
+          style={{
+            background:
+              row.transactionStatus === "completed" ? "#b7d5ac" : "#fff1dc",
+            padding: "6px 14px",
+            borderRadius: "20px",
+            color:
+              row.transactionStatus === "completed" ? "#0e7a0d" : "#EF940B",
+            fontWeight: "bold",
+            textTransform: "capitalize",
+          }}
+        >
+          {row.transactionStatus}
+        </div>
+      ),
     },
     // {
     //   name: "Actions",
     //   cell: (row) => (
-    //     <>
-    //       <UncontrolledDropdown className="action_dropdown">
-    //         <DropdownToggle className="action_btn">
-    //           <MoreVertical color="#000" size={16} />
-    //         </DropdownToggle>
-    //         <DropdownMenu>
-    //           <DropdownItem>
-    //             View Customer
-    //             <FaEye />
-    //           </DropdownItem>
-    //         </DropdownMenu>
-    //       </UncontrolledDropdown>
-    //     </>
+    //     <UncontrolledDropdown className="action_dropdown">
+    //       <DropdownToggle className="action_btn">
+    //         <MoreVertical color="#000" size={16} />
+    //       </DropdownToggle>
+    //       <DropdownMenu>
+    //         <DropdownItem
+    //           onClick={() =>
+    //             navigate(`/transactions/${row._id}`, { state: row })
+    //           }
+    //         >
+    //           View Transaction <FaEye />
+    //         </DropdownItem>
+    //       </DropdownMenu>
+    //     </UncontrolledDropdown>
     //   ),
     //   sortable: false,
     //   center: true,
     //   omit: userRole !== "admin",
-    //   width: "90px"
+    //   width: "120px",
     // },
   ];
 
-  const filteredTransactions = transactions.filter(transaction =>
-    transaction?.customer_info?.first_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    transaction?.customer_info?.last_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    transaction?.amount?.toString().includes(searchQuery.toLowerCase())
-);
+  // Search Filter
+  const filteredTransactions = transactions.filter(
+    (t) =>
+      t?.userId?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t?.amount?.toString().includes(searchQuery.toLowerCase()) ||
+      t?.transactionStatus?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <Fragment>
@@ -295,68 +225,33 @@ const TransactionTable = () => {
         <Row>
           <Col md={12} lg={12} xl={12} xxl={12}>
             <div className="d-flex align-items-center mb-3 justify-between">
-              <Nav tabs className="product_variant_tabs">
-                <NavItem>
-                  <NavLink
-                    className={BasicTab === 'all' ? "active" : ""}
-                    onClick={() => handleTab('all')}
-                  >
-                    All
-                  </NavLink>
-                </NavItem>
-                <NavItem>
-                  <NavLink
-                    className={BasicTab === 'today' ? "active" : ""}
-                    onClick={() => handleTab('today')}
-                  >
-                    Today
-                  </NavLink>
-                </NavItem>
-                <NavItem>
-                  <NavLink
-                    className={BasicTab === '7d' ? "active" : ""}
-                    onClick={() => handleTab('7d')}
-                  >
-                    7D
-                  </NavLink>
-                </NavItem>
-                <NavItem>
-                  <NavLink
-                    className={BasicTab === '1m' ? "active" : ""}
-                    onClick={() => handleTab('1m')}
-                  >
-                    1M
-                  </NavLink>
-                </NavItem>
-                <NavItem>
-                  <NavLink
-                    className={BasicTab === '3m' ? "active" : ""}
-                    onClick={() => handleTab('3m')}
-                  >
-                    3M
-                  </NavLink>
-                </NavItem>
-                <NavItem>
-                  <NavLink
-                    className={BasicTab === '6m' ? "active" : ""}
-                    onClick={() => handleTab('6m')}
-                  >
-                    6M
-                  </NavLink>
-                </NavItem>
-                <NavItem>
-                  <NavLink
-                    className={BasicTab === '1yr' ? "active" : ""}
-                    onClick={() => handleTab('1yr')}
-                  >
-                    1Y
-                  </NavLink>
-                </NavItem>
-              </Nav>
+              {/* Tabs */}
+              {/* <Nav tabs className="product_variant_tabs">
+                {["all", "today", "7d", "1m", "3m", "6m", "1yr"].map((tab) => (
+                  <NavItem key={tab}>
+                    <NavLink
+                      className={BasicTab === tab ? "active" : ""}
+                      onClick={() => handleTab(tab)}
+                    >
+                      {tab.toUpperCase()}
+                    </NavLink>
+                  </NavItem>
+                ))}
+              </Nav> */}
+               <h4>Transactions</h4>
+
+              {/* Search */}
               <div className="file-content file-content1 justify-content-end">
-                <div className='mb-0 form-group position-relative search_outer d-flex align-items-center'>
-                  <i className='fa fa-search' style={{ top: 'unset' }}></i>
-                  <input className='form-control border-0' style={{ maxWidth: '195px' }} type='text' onChange={(e) => setSearchQuery(e.target.value)} placeholder='Search customer name, product, price, etc...' />
+                <div className="mb-0 form-group position-relative search_outer d-flex align-items-center">
+                  <i className="fa fa-search" style={{ top: "unset" }}></i>
+                  <input
+                    className="form-control border-0"
+                    style={{ maxWidth: "250px" }}
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search by customer, amount, status..."
+                  />
                 </div>
               </div>
             </div>
@@ -364,18 +259,18 @@ const TransactionTable = () => {
         </Row>
       </Row>
 
-
+      {/* Data Table */}
       <DataTable
         data={filteredTransactions || []}
         columns={orderColumns}
         pagination
-        // onSelectedRowsChange={handleRowSelected}
-        // clearSelectedRows={toggleDelet}
+        highlightOnHover
+        responsive
         progressPending={isLoading}
         progressComponent={<Loader />}
       />
-
     </Fragment>
   );
 };
+
 export default TransactionTable;

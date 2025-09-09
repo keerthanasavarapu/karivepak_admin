@@ -75,14 +75,7 @@ const OrderTable = () => {
         }
 
       });
-      //   , {     
-      //   params: {
-      //     month: String(formattedStartDate),
-      //     period: String(activeTabs),
-      //     status: String(activeTab)
-      //   }
-      // }
-      // );\
+
       console.log(response)
       console.log(response.data, "response of orders")
 
@@ -113,7 +106,7 @@ const OrderTable = () => {
   const fetchDeliveryPersons = async () => {
     try {
       const response = await axios.get(
-        `${baseURL}/api/users/delivery-persons`,
+        `${baseURL}/api/auth/delivery-persons`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -127,81 +120,90 @@ const OrderTable = () => {
     }
   };
 
-  // useEffect(() => {
+  useEffect(() => {
 
-  //   fetchDeliveryPersons();
-  // }, []);
+    fetchDeliveryPersons();
+  }, []);
 
   useEffect(() => {
     fetchOrders();
 
   }, [activeTab, activeTabs, formattedStartDate]);
 
-  const getBadgeColor = (status, type) => {
-    console.log(status, type, "status and type in getBadgeColor")
-    if (type === "paymentStatus") {
-      return (
-        {
-          pending: "danger",
-          failed: "danger",
-          paid: "success",
-          success: "success",
-        }[status] || "secondary"
-      );
-    }
-    if (type === "order") {
-      return (
-        {
-          placed: "warning",
-          confirmed: "success",
-          processing: "success",
-          shipped: "success",
-          delivered: "success",
-          cancelled: "danger",
-          returned: "success",
-          pending: "danger",
-        }[status] || "secondary"
-      );
-    }
-    if (type === "delivery") {
-      return (
-        {
-          pending: "primary",
-          in_transit: "primary",
-          delivered: "success",
-          accepted: "success",
-          cancelled: "primary",
-          failed: "danger",
-        }[status] || "secondary"
-      );
-    }
-    if (type === "placed") {
-      return (
-        {
-          placed: "warning",
-          cancelled: "primary",
-          delivered: "success",
-          failed: "danger",
-        }[status] || "secondary"
-      );
-    }
-    return "secondary";
-  };
+ const getBadgeColor = (status, type) => {
+  if (!status) return "secondary"; // default if empty
+  const normalized = status.toLowerCase();
+
+  if (type === "paymentStatus") {
+    return (
+      {
+        pending: "danger",
+        failed: "danger",
+        paid: "success",
+        success: "success",
+      }[normalized] || "secondary"
+    );
+  }
+
+  if (type === "order") {
+    return (
+      {
+        placed: "warning",
+        confirmed: "info",
+        processing: "primary",
+        shipped: "primary",
+        delivered: "success",
+        cancelled: "danger",
+        returned: "secondary",
+        pending: "danger",
+      }[normalized] || "secondary"
+    );
+  }
+
+  if (type === "delivery") {
+    return (
+      {
+        pending: "danger",
+        in_transit: "primary",
+        delivered: "success",
+        accepted: "success",
+        cancelled: "danger",
+        failed: "danger",
+      }[normalized] || "secondary"
+    );
+  }
+
+  if (type === "placed") {
+    return (
+      {
+        placed: "warning",
+        cancelled: "danger",
+        delivered: "success",
+        failed: "danger",
+      }[normalized] || "secondary"
+    );
+  }
+
+  return "secondary";
+};
+
 
   const handleDeliveryAssign = async () => {
     try {
-      console.log(selectedSubOrder._id, selectedDeliveryPerson);
-      const response = await axios.patch(
-        `${baseURL}/api/orders/${selectedSubOrder._id}/assign-delivery`,
+      console.log(selectedSubOrder._id, selectedDeliveryPerson, "gffffffffffffffffffffffffffff");
+      const response = await axios.post(
+        `${baseURL}/api/delivery/assign/${selectedSubOrder._id}`,
         {
-          deliveryPersonId: selectedDeliveryPerson,
+          partnerId: selectedDeliveryPerson,
         },
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-        }
+        },
+
       );
+      console.log(response, "resdxfshxsxs")
 
       Swal.fire({
         title: "Delivery Assigned!",
@@ -212,6 +214,7 @@ const OrderTable = () => {
       setShowDeliveryModal(false);
       fetchOrders(pagination.page);
     } catch (error) {
+      console.log(error, "error in assign")
       Swal.fire({
         title: "Error",
         text: error.response?.data?.message || "Failed to assign delivery",
@@ -283,6 +286,8 @@ const OrderTable = () => {
       });
     }
   };
+
+
   const AssignPorter = async (subOrder) => {
     try {
       await axios.post(
@@ -379,9 +384,10 @@ const OrderTable = () => {
       selector: (row) => row.paymentStatus,
       sortable: true,
       cell: (row) => (
-        <Badge color={getBadgeColor(row.paymentStatus, "payment")}>
+        <Badge color={getBadgeColor(row.paymentStatus, "paymentStatus")}>
           {row.paymentStatus?.toUpperCase()}
         </Badge>
+
       ),
     },
     {
@@ -389,9 +395,10 @@ const OrderTable = () => {
       selector: (row) => row.status,
       sortable: true,
       cell: (row) => (
-        <Badge color={getBadgeColor(row.status, "placed")}>
+        <Badge color={getBadgeColor(row.status, "order")}>
           {row.status?.toUpperCase()}
         </Badge>
+
       ),
     },
     {
@@ -442,7 +449,7 @@ const OrderTable = () => {
               <Truck className="me-2" size={14} />
               Assign Delivery
             </DropdownItem>
-            <DropdownItem
+            {/* <DropdownItem
               onClick={() => {
                 setSelectedSubOrder(row);
                 AssignPorter(row)
@@ -472,7 +479,7 @@ const OrderTable = () => {
             >
               <AlertCircle className="me-2" size={14} />
               Update Status
-            </DropdownItem>
+            </DropdownItem> */}
           </DropdownMenu>
         </UncontrolledDropdown>
       ),
@@ -564,14 +571,17 @@ const OrderTable = () => {
     </div>
   );
 
-  // Filter function for search
-  const filteredOrders = orderData.filter(
-    (item) =>
-      item._id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.user?.mobile?.includes(searchTerm) ||
-      item.couponCode?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // filter logic
+  const filteredOrders = orderData.filter((order) => {
+    const search = searchTerm.toLowerCase();
+    return (
+      order._id?.toLowerCase().includes(search) ||
+      order?.user?.name?.toLowerCase().includes(search) ||
+      order?.user?.mobile?.toLowerCase().includes(search) ||
+      order?.coupon?.toLowerCase().includes(search)
+    );
+  });
+
 
 
   const handleDateChange = (date) => {
@@ -586,7 +596,7 @@ const OrderTable = () => {
 
   return (
     <Fragment>
-      <div className="card-header d-flex align-items-center justify-between" style={{ padding: '15px 30px' }}>
+      {/* <div className="card-header d-flex align-items-center justify-between" style={{ padding: '15px 30px' }}>
         <Nav tabs className='product_variant_tabs'>
           <NavItem>
             <NavLink className={activeTab === 'placed' ? 'active' : ''} onClick={() => handleTabClick('placed')}>
@@ -644,25 +654,25 @@ const OrderTable = () => {
 
         </Nav>
 
-        {/* <div>
-                            <DatePicker
-                                className="form-control datepickerr digits mx-2"
-                                selected={startDate}
-                                onChange={(date) => {
-                                    setStartDate(date);
-                                    fetchDashboardData(date); //  fetch data on change
-                                }}
-                                showMonthYearPicker //  Enables month + year picker view
-                                dateFormat="MMM yyyy" //  Displays like "Jan 2025"
-                                yearItemNumber={9}
-                                showIcon
-                                placeholderText="Last Year"
-                            />
+        <div>
+          <DatePicker
+            className="form-control datepickerr digits mx-2"
+            selected={startDate}
+            onChange={(date) => {
+              setStartDate(date);
+              fetchDashboardData(date); //  fetch data on change
+            }}
+            showMonthYearPicker //  Enables month + year picker view
+            dateFormat="MMM yyyy" //  Displays like "Jan 2025"
+            yearItemNumber={9}
+            showIcon
+            placeholderText="Last Year"
+          />
 
 
-                        </div> */}
+        </div>
 
-      </div>
+      </div> */}
       <Row className="pb-4">
         <div className="d-flex justify-content-between align-items-center">
           <H4>Order List</H4>
@@ -700,7 +710,7 @@ const OrderTable = () => {
 
       <DataTable
         columns={columns}
-        data={orderData}
+        data={filteredOrders}
         pagination
         paginationPerPage={10}
         paginationRowsPerPageOptions={[10, 25, 50]}
@@ -709,6 +719,7 @@ const OrderTable = () => {
         expandableRows
         expandableRowsComponent={ExpandedComponent}
       />
+
 
       {/* Delivery Assignment Modal */}
       <CommonModal

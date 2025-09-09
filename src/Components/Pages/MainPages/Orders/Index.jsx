@@ -51,23 +51,7 @@ const Orders = () => {
             </CardBody>
           </Card>
         </Col>
-        <Col xl='3' sm='6' >
-          <Card className='social-widget widget-hover'>
-            <CardBody>
-              <div className='d-flex align-items-center justify-content-between'>
-                <div className='d-flex align-items-center gap-2'>
-                  <img src={square} alt="" className='square_box' />  <h6 className="mb-0"> Total Sub Orders</h6>
-                </div>
-              </div>
-              <div className='d-flex justify-content-between mt-3' >
-                <h5 className='fw-600 f-16 mb-0'>
-                  {countData?.totalSubOrders ? countData?.totalSubOrders : 0}
-                </h5>
-              </div>
-
-            </CardBody>
-          </Card>
-        </Col>
+      
         <Col xl='3' sm='6' >
           <Card className='social-widget widget-hover'>
             <CardBody>
@@ -85,23 +69,7 @@ const Orders = () => {
             </CardBody>
           </Card>
         </Col>
-        <Col xl='3' sm='6' >
-          <Card className='social-widget widget-hover'>
-            <CardBody>
-              <div className='d-flex align-items-center justify-content-between'>
-                <div className='d-flex align-items-center gap-2'>
-                  <img src={square} alt="" className='square_box' />  <h6 className="mb-0"> Total Pending SubOrders</h6>
-                </div>
-              </div>
-              <div className='d-flex justify-content-between mt-3' >
-                <h5 className='fw-600 f-16 mb-0'>
-                  {countData?.pendingOrders ? countData?.pendingOrders : 0}
-                </h5>
-              </div>
-
-            </CardBody>
-          </Card>
-        </Col>
+        
       </Row>
 
       <Row>

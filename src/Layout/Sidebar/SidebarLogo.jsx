@@ -2,7 +2,7 @@ import React, { useContext, useState } from 'react';
 import { Grid } from 'react-feather';
 import { Link } from 'react-router-dom';
 import { Image } from '../../AbstractElements';
-import logo from '../../assets/images/logo/bodegaa-logo.jpg';
+import logo from '../../assets/images/logo/Bodegaaa.png';
 import CustomizerContext from '../../_helper/Customizer';
 
 const SidebarLogo = () => {

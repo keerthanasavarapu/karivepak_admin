@@ -172,7 +172,7 @@ export const MENUITEMS = [
         title: "Transaction",
         icon: "report",
         type: "link",
-        path: `/report`,
+        path: `transactions`,
         badge: "badge badge-light-danger",
         active: false,
         // roles: ['admin'] ,
@@ -184,14 +184,14 @@ export const MENUITEMS = [
       //   active: false,
       //   path: `/statistics`
       // },
-      {
-        title: 'Invoices',
-        icon: 'customer',
-        type: 'link',
-        active: false,
-        path: `/customers`,
-        // roles: ['admin'],
-      },
+      // {
+      //   title: 'Invoices',
+      //   icon: 'customer',
+      //   type: 'link',
+      //   active: false,
+      //   path: `/invoice`,
+      //   // roles: ['admin'],
+      // },
       // {
       //   title: 'Role Management',
       //   icon: 'role',
