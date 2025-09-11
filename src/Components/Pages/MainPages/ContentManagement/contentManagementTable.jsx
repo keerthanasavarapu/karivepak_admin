@@ -2,7 +2,7 @@ import React, { Fragment, useState, useEffect, useRef } from 'react'
 import DataTable from 'react-data-table-component';
 import { Button, CardBody, Col, Container, DropdownItem, DropdownMenu, DropdownToggle, Form, FormGroup, Input, InputGroup, InputGroupText, Label, Media, Nav, NavItem, NavLink, Row, UncontrolledDropdown } from 'reactstrap';
 import { MoreVertical, PlusCircle } from 'react-feather';
-import CommonModal from '../../../UiKits/Modals/common/modal'
+import CommonModal from '../../../UiKits/Modals/common/modal';
 import axios from 'axios';
 import moment from 'moment';
 import Swal from 'sweetalert2';
@@ -11,7 +11,7 @@ import * as Yup from 'yup'
 import { baseURL, imageURL } from '../../../../Services/api/baseURL';
 import dummyImg from '../../../../assets/images/product/2.png';
 import { Image } from '../../../../AbstractElements';
-import { FaPen, FaTrashAlt } from 'react-icons/fa';
+import { FaPen, FaTrashAlt, FaExchangeAlt } from 'react-icons/fa';
 import { debounce } from 'lodash';
 import Loader from '../../../Loader/Loader';
 import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop';
@@ -47,10 +47,10 @@ function ContentManagementTable() {
     const [selectedImages, setSelectedImages] = useState('');
     const [isPreview, setIsPreview] = useState(false);
     const inputRef = useRef();
-    const [images,setImages] = useState([]);
+    const [images, setImages] = useState([]);
     const imgRefs = useRef([]);
     const [cropList, setCropList] = useState([]);
-    
+
 
     const banner_types = {
         subscribe_banner: "Subscribe Banner",
@@ -97,18 +97,17 @@ function ContentManagementTable() {
         if (data) {
             data.device_type && formik.setFieldValue("device_type", data.device_type);
             data.banner_type && formik.setFieldValue("banner_type", data.banner_type);
-            data.theme_type && formik.setFieldValue("theme_type", data.theme_type);
 
             if (data?.image) {
                 const imgSrc = imageURL + data?.image;
                 setFiles(data?.image);
                 setSelectedImage(imgSrc)
             }
-            if (data?.images && data.images.length>0) {
+            if (data?.images && data.images.length > 0) {
                 const imgList = [];
-                data.images.forEach((img) => { imgList.push( imageURL+img)});
+                data.images.forEach((img) => { imgList.push(imageURL + img) });
                 setFiles(imgList);
-                setSelectedImages( imgList)
+                setSelectedImages(imgList)
             }
 
         }
@@ -140,7 +139,7 @@ function ContentManagementTable() {
     }
 
     const deleteBrand = async (id) => {
-         {
+        {
             const token = await JSON.parse(localStorage.getItem("token"))
             try {
                 const data = await axios.delete(`${baseURL}/api/banner/${id}`, {
@@ -198,15 +197,14 @@ function ContentManagementTable() {
 
     const handleClickPreview = (imageUrl) => {
         console.log(imageUrl)
-          setSelectedImages(imageUrl)
-          setIsPreview(!isPreview);
+        setSelectedImages(imageUrl)
+        setIsPreview(!isPreview);
     };
 
     const formik = useFormik({
         initialValues: {
             device_type: "",
             banner_type: "",
-            theme_type: "",
             title: "",
             image: "",
             content: ""
@@ -214,7 +212,6 @@ function ContentManagementTable() {
         validationSchema: Yup.object({
             device_type: Yup.string().required('Device Type is required'),
             banner_type: Yup.string().required('Banner Type is required'),
-            theme_type: Yup.string().required('Theme Type is required'),
             // email: Yup.string()('Invalid email').required('Email is required'),
         }),
         onSubmit: async (values) => {
@@ -225,14 +222,13 @@ function ContentManagementTable() {
                 const formData = new FormData();
                 values.device_type && formData.append('device_type', values.device_type);
                 values.banner_type && formData.append('banner_type', values.banner_type);
-                values.theme_type && formData.append('theme_type', values.theme_type);
 
                 if (files) {
-                    console.log("files",files);
-                   // formData.append('image', files);
-                   files.forEach((image, index) => {
-                             formData.append(`image_[${index}]`, image);
-                         })
+                    console.log("files", files);
+                    // formData.append('image', files);
+                    files.forEach((image, index) => {
+                        formData.append(`image_[${index}]`, image);
+                    })
                 }
 
                 // files.length > 0 &&
@@ -303,16 +299,16 @@ function ContentManagementTable() {
     const handleFileSelection = (event) => {
         const selectedFiles = Array.from(event.target.files);
         handleFiles(selectedFiles);
-    };
+    };
 
-   const handleFiles = (fileList) => {
+    const handleFiles = (fileList) => {
         const newFiles = [];
         const fileReaders = [];
         const newSrcList = [];
         const newCropList = [];
-        
+
         // Filter the files based on the category
-        const filteredFiles = (formik.values.banner_type === "landing_page_banner")  ? fileList : [fileList[0]];
+        const filteredFiles = (formik.values.banner_type === "landing_page_banner") ? fileList : [fileList[0]];
 
         filteredFiles.forEach((file, index) => {
             const reader = new FileReader();
@@ -332,20 +328,20 @@ function ContentManagementTable() {
 
             reader.readAsDataURL(file);
         });
-};
-/*
-    const handleFiles = (fileList) => {
-        if (fileList.length > 0) {
-            const file = fileList[0];
-            const reader = new FileReader();
-            reader.addEventListener('load', () => setImages([reader.result]));
-            reader.readAsDataURL(file);
-        }
-       
     };
- */
+    /*
+        const handleFiles = (fileList) => {
+            if (fileList.length > 0) {
+                const file = fileList[0];
+                const reader = new FileReader();
+                reader.addEventListener('load', () => setImages([reader.result]));
+                reader.readAsDataURL(file);
+            }
+           
+        };
+     */
 
-    const onImageLoaded = (image,index) => {
+    const onImageLoaded = (image, index) => {
         const { naturalWidth: width, naturalHeight: height } = image.currentTarget;
         const aspectRatio = formik.values.banner_type === "category_search_banner" ? 11 / 1 : 16 / 5;
         const crop = centerCrop(
@@ -370,34 +366,33 @@ function ContentManagementTable() {
 
     const onCropComplete = async (crop, index) => {
         const image = imgRefs.current[index];
-         console.log(image);
+        console.log(image);
         const srcContent = image.src;
-        let mimeType="image/jpeg"; // default mime type;
-  
+        let mimeType = "image/jpeg"; // default mime type;
+
         if (srcContent) {
             const dataUri = srcContent;
             // Check if the src attribute contains a data URI
             if (dataUri.startsWith('data:')) {
-            // Extract the MIME type from the data URI
+                // Extract the MIME type from the data URI
                 const mimeMatch = dataUri.match(/^data:([^;]+);base64,/);
                 if (mimeMatch && mimeMatch[1]) {
                     mimeType = mimeMatch[1]; // This is the MIME type (e.g., image/gif)
                 }
-             }
+            }
         }
         console.log(mimeType)
         let blobImg;
-        if (mimeType === 'image/gif')
-            {
-                const base64String = srcContent;
-                // Convert base64 string to Blob
-                blobImg = base64ToBlob('banner.gif',base64String, 'image/gif');
-               // blobImg= await cropGifImg(imgRef.current,crop,'banner.gif')
-              // blobImg = await cropGifImage(imgRef.current, crop, "banner.gif");
-            
-            } else{
-               blobImg = await generateCroppedImage(image, crop, 'banner.jpeg','image/jpeg');
-            }
+        if (mimeType === 'image/gif') {
+            const base64String = srcContent;
+            // Convert base64 string to Blob
+            blobImg = base64ToBlob('banner.gif', base64String, 'image/gif');
+            // blobImg= await cropGifImg(imgRef.current,crop,'banner.gif')
+            // blobImg = await cropGifImage(imgRef.current, crop, "banner.gif");
+
+        } else {
+            blobImg = await generateCroppedImage(image, crop, 'banner.jpeg', 'image/jpeg');
+        }
         console.log(blobImg)
         setFiles(prevFiles => {
             const newFiles = [...prevFiles];
@@ -406,108 +401,70 @@ function ContentManagementTable() {
         });
     };
 
-    function  cropGifImg(image,crop,fileName){
 
-        /*    const srcContent=image.src;
-            console.log(srcContent);
-            const arrayBuffer = srcContent.arrayBuffer();
-            const gif = parseGIF(arrayBuffer);
-            const frames = decompressFrames(gif, true);
-            console.log("aa")
-            const croppedFrames = frames.map(frame => {
-             
-                const frameCanvas = document.createElement("canvas");
-                const scaleX = image.naturalWidth / image.width;
-                const scaleY = image.naturalHeight / image.height;
-                const pixelRatio = window.devicePixelRatio;
-                frameCanvas.width = crop.width * pixelRatio;
-                frameCanvas.height = crop.height * pixelRatio;
-                const frameCtx = frameCanvas.getContext("2d");
-                frameCtx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-                frameCtx.imageSmoothingQuality = "high";
-                frameCtx.putImageData(frame.patch, -crop.x * scaleX, -crop.y * scaleY);
-                return frameCanvas;
-            });
+    const toggleStatus = async (id, currentStatus) => {
+        try {
+            const token = await JSON.parse(localStorage.getItem("token"))
+            if (!token) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'You are not authenticated. Please log in.'
+                })
+                return;
+            }
+            const obj = {
+                status: currentStatus === "inactive" ? "active" : "inactive",
+            };
 
-            return new Promise((resolve, reject) => {
-                gifshot.createGIF({
-                    images: croppedFrames,
-                    gifWidth: crop.width,
-                    gifHeight: crop.height,
-                    numFrames: frames.length,
-                    frameDuration: gif.lsd.gce.delay * 10 // delay is in 1/100th of a second
-                }, function (obj) {
-                    if (!obj.error) {
-                        const blob = new Blob([obj.image], { type: 'image/gif' });
-                        blob.name = fileName;
-                        resolve(blob);
-                    } else {
-                        reject(obj.error);
-                    }
-                });
-            });*/
-        }
-    
+            const response = await axios.patch(
+                `${baseURL}/api/banner/${id}/status`,
+                obj,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
 
-// Function to handle GIF images
-function cropGifImage(image, crop, fileName) {
-   /* return new Promise((resolve, reject) => {
-        const gif = new GIF({
-          workers: 2,
-          quality: 10,
-          width: crop.width,
-          height: crop.height,
-        });
-    
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = crop.width;
-        canvas.height = crop.height;
-    
-        // Draw the original image onto the canvas for cropping
-        ctx.drawImage(
-          image,
-          crop.x, crop.y, crop.width, crop.height,
-          0, 0, crop.width, crop.height
-        );
-    
-        // Add the cropped frame to the GIF
-        gif.addFrame(canvas, { copy: true });
-    
-        gif.on('finished', (blob) => {
-          blob.name = fileName;
-          resolve(blob);
-        });
-    
-        gif.render();
-      });*/
-  }
-  
+            console.log("Status updated successfully:", response.data);
+            getData();
+            setDeleteModal(!deleteModal);
+        } catch (err) {
+            console.error("Error toggling status:", err);
+            Swal.fire({
+                icon: "warning",
+                title: "Note",
+                text: err?.response?.data?.message
+            })
+        }
+    };
+
+
     // Function to convert base64 string to Blob
-  const base64ToBlob = (fileName,base64,mime) => {
-    // Split the base64 string to remove the data URL part
-    // console.log(base64);
-    const parts = base64.split(',');
-   // console.log(parts[1]);
-    const byteString = atob(parts[1]);
-    const mimeType = parts[0].match(/:(.*?);/)[1];
+    const base64ToBlob = (fileName, base64, mime) => {
+        // Split the base64 string to remove the data URL part
+        // console.log(base64);
+        const parts = base64.split(',');
+        // console.log(parts[1]);
+        const byteString = atob(parts[1]);
+        const mimeType = parts[0].match(/:(.*?);/)[1];
 
-    // Create an ArrayBuffer and a Uint8Array from the byteString
-    const ab = new ArrayBuffer(byteString.length);
-    const ia = new Uint8Array(ab);
-    for (let i = 0; i < byteString.length; i++) {
-    ia[i] = byteString.charCodeAt(i);
-    }
+        // Create an ArrayBuffer and a Uint8Array from the byteString
+        const ab = new ArrayBuffer(byteString.length);
+        const ia = new Uint8Array(ab);
+        for (let i = 0; i < byteString.length; i++) {
+            ia[i] = byteString.charCodeAt(i);
+        }
 
-    const blob = new Blob([ia], { type: mimeType });
-    blob.name = fileName; // Manually add the name property
+        const blob = new Blob([ia], { type: mimeType });
+        blob.name = fileName; // Manually add the name property
 
-    return blob;
+        return blob;
 
-  };
+    };
 
 
-    const generateCroppedImage = (image, crop, fileName,mimeType ) => {
+    const generateCroppedImage = (image, crop, fileName, mimeType) => {
         console.log("filename: ", fileName)
         console.log('mimeType', mimeType)
         const canvas = document.createElement("canvas");
@@ -570,24 +527,15 @@ function cropGifImage(image, crop, fileName) {
             )
         },
         {
-            name: 'Theme Type',
-            selector: row => `${row.theme_type}`,
-            sortable: true,
-            center: true,
-            cell: (row) => (
-                capitalize(row?.theme_type)
-            )
-        },
-        {
             name: 'Preview',
             selector: row => row['full_name'],
             sortable: true,
             center: false,
             cell: (row) => (
                 <>
-          <Media className='d-flex align-items-center'>
+                    <Media className='d-flex align-items-center'>
                         <Image attrImage={{ className: ' rounded-circle w-[30px] h-[30px]', src: `${row?.image || dummyImg}`, alt: 'Brand image' }} />
-                        <span onClick={() => { handleClickPreview(row.image)}} className='ms-2 link-primary cursor-pointer'>   {capitalize('Click here to preview')}</span>
+                        <span onClick={() => { handleClickPreview(row.image) }} className='ms-2 link-primary cursor-pointer'>   {capitalize('Click here to preview')}</span>
                     </Media>
                 </>
 
@@ -608,8 +556,12 @@ function cropGifImage(image, crop, fileName) {
             sortable: true,
             center: true,
             cell: (row) => (
-                <span style={{ fontSize: '13px' }} className={`badge badge-light-success`}>
-                    Active
+                <span
+                    style={{ fontSize: '13px' }}
+                    className={`badge ${row.status === 'active' ? 'badge-light-success' : 'badge-light-danger'
+                        }`}
+                >
+                    {row.status == 'active' ? 'Active' : 'Inactive'}
                 </span>
             ),
         },
@@ -637,6 +589,13 @@ function cropGifImage(image, crop, fileName) {
                             }}>
                                 Delete
                                 <FaTrashAlt />
+                            </DropdownItem>
+                            <DropdownItem onClick={() => {
+                                toggleStatus(row?._id, row?.status);
+                            }} className='d-flex gap-2  '>
+                                <FaExchangeAlt />
+                                {row?.status === 'active' ? 'Deactivate' : 'Activate'}
+
                             </DropdownItem>
                         </DropdownMenu>
                     </UncontrolledDropdown>
@@ -744,7 +703,7 @@ function cropGifImage(image, crop, fileName) {
                                     )}
                                 </FormGroup>
                             </Col>
-                            <Col xl={6}>
+                            {/* <Col xl={6}>
                                 <FormGroup>
                                     <Label className="font-medium text-base">
                                         Select Theme Type <span className="text-danger">*</span>
@@ -766,7 +725,7 @@ function cropGifImage(image, crop, fileName) {
                                         ""
                                     )}
                                 </FormGroup>
-                            </Col>
+                            </Col> */}
                             {/* <Col xl={12}>
                                 <FormGroup>
                                     <Label className="font-medium text-base">
@@ -816,7 +775,7 @@ function cropGifImage(image, crop, fileName) {
                             <Col xl={12}>
                                 <div className='mt-3'>
                                     {
-                                         images.length>0 ? (images.map((image, index) => (
+                                        images.length > 0 ? (images.map((image, index) => (
                                             <ReactCrop
                                                 key={index}
                                                 crop={cropList[index]}
@@ -840,16 +799,16 @@ function cropGifImage(image, crop, fileName) {
                                             </ReactCrop>)))
 
                                             :
-                                        /* 
-                                           src ? <ReactCrop crop={crop} onChange={c => setCrop(c)} onComplete={() => onCropComplete(crop)} aspect={16 / 4} keepSelection={true} minWidth={1920} minHeight={500}  >
-                                           <img ref={imgRef} src={src} onLoad={onImageLoaded} alt=''  />
-                                       </ReactCrop>
-                                           :*/
-                                           <img src={selectedImage} alt='' />
+                                            /* 
+                                               src ? <ReactCrop crop={crop} onChange={c => setCrop(c)} onComplete={() => onCropComplete(crop)} aspect={16 / 4} keepSelection={true} minWidth={1920} minHeight={500}  >
+                                               <img ref={imgRef} src={src} onLoad={onImageLoaded} alt=''  />
+                                           </ReactCrop>
+                                               :*/
+                                            <img src={selectedImage} alt='' />
                                     }
                                 </div></Col>
                             <Col xl={12} className="modal_btm d-flex justify-content-end">
-                                <Button className="cancel_Btn" onClick={() => {setImages([]); SetAddmodal(false)}}>
+                                <Button className="cancel_Btn" onClick={() => { setImages([]); SetAddmodal(false) }}>
                                     Cancel
                                 </Button>
                                 <Button type="submit" disabled={loading} className='btn btn-primary d-flex align-items-center ms-3'>
@@ -864,15 +823,15 @@ function cropGifImage(image, crop, fileName) {
             <CommonModal isOpen={isPreview} className="store_modal" toggler={() => setIsPreview(!isPreview)} size="lg">
                 <Container>
                     <Row>
-                    {/* {selectedImages?.length > 0 ? selectedImages.map((image, index) => (
+                        {/* {selectedImages?.length > 0 ? selectedImages.map((image, index) => (
                         <Col xl={12} md={12} sm={12} key={index}>
                           <img src={image} className='w-100' alt={`banner-${index}`} />
                         </Col>
                      )) :  */}
-                      <Col xl={12} md={12} sm={12} >
-                          <img src={selectedImages} className='w-100' alt={`banner`} />
+                        <Col xl={12} md={12} sm={12} >
+                            <img src={selectedImages} className='w-100' alt={`banner`} />
                         </Col>
-                     {/* } */}
+                        {/* } */}
                     </Row>
                 </Container>
             </CommonModal>
