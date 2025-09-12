@@ -347,7 +347,7 @@ function ContentManagementTable() {
             formik.values.device_type === "website"
                 ? (formik.values.banner_type === "festival_banner"
                     ? 2.17 / 1
-                    : 2.62 / 1)
+                    : 2.06 / 1)
                 : (formik.values.banner_type === "festival_banner"
                     ? 1 / 1
                     : formik.values.banner_type === "landing_page_banner"
