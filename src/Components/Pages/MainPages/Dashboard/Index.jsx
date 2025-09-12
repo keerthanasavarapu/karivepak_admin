@@ -23,6 +23,7 @@ import { addMonths } from 'date-fns';
 import moment from 'moment';
 import squareBox from '../../../../../src/assets/images/sqaurebox.svg'
 import Loader from "../../../Loader/Loader";
+import OrdersTable from '../Orders/OrdersTable';
 
 
 
@@ -368,64 +369,10 @@ export const OrdersCard = () => {
 
     return (
         <Card>
-            <div className="card-header d-flex justify-content-between align-items-center" style={{ padding: "15px" }}>
-                {/* Left Side - Header */}
-                <h6 className="mb-0">Orders</h6>
+            <div  style={{ padding: "15px" }}>
 
-                {/* Right Side - Search + Date */}
-                <div className="d-flex align-items-center flex-wrap gap-2">
-                    <div className="mb-0 form-group position-relative search_outer d-flex align-items-center">
-                        <i className="fa fa-search"></i>
-                        <input
-                            className="form-control border-0 searchh"
-                            type="text"
-                            placeholder="Search..."
-                            value={searchTerm}
-                            onChange={handleSearch}
-                        />
-                    </div>
-                    <DatePicker
-                        className="form-control datepickerr digits"
-                        selected={startDate}
-                        onChange={onChangeDate}
-                        startDate={startDate}
-                        endDate={endDate}
-                        selectsRange
-                        placeholderText="Select Date"
-                        showIcon
-                    />
-                </div>
-            </div>
-
-
-            {loading ? (
-                <p className="text-center my-5">Loading...</p>
-            ) : orderData.length > 0 ? (
-                <DataTable
-                    data={orderData}
-                    columns={orderColumns}
-                    striped
-                    center
-                    pagination
-                    paginationServer
-                    paginationTotalRows={pagination.totalRows}
-                    paginationPerPage={pagination.perPage}
-                    paginationDefaultPage={pagination.page}
-                    onChangePage={(page) =>
-                        setPagination((prev) => ({ ...prev, page }))
-                    }
-                    onChangeRowsPerPage={(newPerPage, page) =>
-                        setPagination((prev) => ({
-                            ...prev,
-                            perPage: newPerPage,
-                            page,
-                        }))
-                    }
-                />
-
-            ) : (
-                <p className="my-5 text-center">No Data Found</p>
-            )}
+                <OrdersTable />
+</div>
         </Card>
     );
 };

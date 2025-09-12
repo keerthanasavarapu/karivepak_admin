@@ -117,12 +117,12 @@ const TransactionTable = () => {
 
   // Table Columns
   const orderColumns = [
-    {
-      name: "Transaction Id",
-      selector: (row) => row._id,
-      center: true,
-      width: "180px",
-    },
+    // {
+    //   name: "Transaction Id",
+    //   selector: (row) => row._id,
+    //   center: true,
+    //   width: "180px",
+    // },
     {
       name: "Customer Name",
       selector: (row) => row?.userId?.name || "N/A",
@@ -131,8 +131,8 @@ const TransactionTable = () => {
           <Image
             attrImage={{
               className: " img-30 me-3",
-              src: row?.userId?.profileImage
-                ? imageURL + row.userId.profileImage
+              src: row?.userId?.profilePic
+                ?  row.userId.profilePic
                 : dummyImg,
               alt: "User",
             }}
@@ -147,7 +147,7 @@ const TransactionTable = () => {
     },
     {
       name: "Order Id",
-      selector: (row) => row?.orderId?._id || "N/A",
+      selector: (row) => row?.orderId?.orderId || "N/A",
       center: true,
     },
     {
@@ -216,7 +216,8 @@ const TransactionTable = () => {
     (t) =>
       t?.userId?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       t?.amount?.toString().includes(searchQuery.toLowerCase()) ||
-      t?.transactionStatus?.toLowerCase().includes(searchQuery.toLowerCase())
+      t?.transactionStatus?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t?.orderId?.orderId?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (

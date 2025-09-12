@@ -343,7 +343,17 @@ function ContentManagementTable() {
 
     const onImageLoaded = (image, index) => {
         const { naturalWidth: width, naturalHeight: height } = image.currentTarget;
-        const aspectRatio = formik.values.banner_type === "category_search_banner" ? 11 / 1 : 16 / 5;
+        const aspectRatio =
+            formik.values.device_type === "website"
+                ? (formik.values.banner_type === "festival_banner"
+                    ? 2.17 / 1
+                    : 2.62 / 1)
+                : (formik.values.banner_type === "festival_banner"
+                    ? 1 / 1
+                    : formik.values.banner_type === "landing_page_banner"
+                        ? 2.37 / 1
+                        : 2.37 / 1);
+
         const crop = centerCrop(
             makeAspectCrop(
                 {
@@ -366,34 +376,19 @@ function ContentManagementTable() {
 
     const onCropComplete = async (crop, index) => {
         const image = imgRefs.current[index];
-        console.log(image);
-        const srcContent = image.src;
-        let mimeType = "image/jpeg"; // default mime type;
+        if (!image) return;
 
-        if (srcContent) {
-            const dataUri = srcContent;
-            // Check if the src attribute contains a data URI
-            if (dataUri.startsWith('data:')) {
-                // Extract the MIME type from the data URI
-                const mimeMatch = dataUri.match(/^data:([^;]+);base64,/);
-                if (mimeMatch && mimeMatch[1]) {
-                    mimeType = mimeMatch[1]; // This is the MIME type (e.g., image/gif)
-                }
-            }
-        }
-        console.log(mimeType)
+        const mimeType = image.src.startsWith('data:') ?
+            image.src.match(/^data:([^;]+);base64,/)[1] :
+            'image/jpeg';
+
         let blobImg;
         if (mimeType === 'image/gif') {
-            const base64String = srcContent;
-            // Convert base64 string to Blob
-            blobImg = base64ToBlob('banner.gif', base64String, 'image/gif');
-            // blobImg= await cropGifImg(imgRef.current,crop,'banner.gif')
-            // blobImg = await cropGifImage(imgRef.current, crop, "banner.gif");
-
+            blobImg = base64ToBlob(`banner_${index}.gif`, image.src, 'image/gif');
         } else {
-            blobImg = await generateCroppedImage(image, crop, 'banner.jpeg', 'image/jpeg');
+            blobImg = await generateCroppedImage(image, crop, `banner_${index}.jpeg`, 'image/jpeg');
         }
-        console.log(blobImg)
+
         setFiles(prevFiles => {
             const newFiles = [...prevFiles];
             newFiles[index] = blobImg;
@@ -440,16 +435,10 @@ function ContentManagementTable() {
     };
 
 
-    // Function to convert base64 string to Blob
     const base64ToBlob = (fileName, base64, mime) => {
-        // Split the base64 string to remove the data URL part
-        // console.log(base64);
         const parts = base64.split(',');
-        // console.log(parts[1]);
         const byteString = atob(parts[1]);
         const mimeType = parts[0].match(/:(.*?);/)[1];
-
-        // Create an ArrayBuffer and a Uint8Array from the byteString
         const ab = new ArrayBuffer(byteString.length);
         const ia = new Uint8Array(ab);
         for (let i = 0; i < byteString.length; i++) {
@@ -457,10 +446,8 @@ function ContentManagementTable() {
         }
 
         const blob = new Blob([ia], { type: mimeType });
-        blob.name = fileName; // Manually add the name property
-
+        blob.name = fileName;
         return blob;
-
     };
 
 

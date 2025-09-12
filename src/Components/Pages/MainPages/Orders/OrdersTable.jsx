@@ -49,7 +49,7 @@ const OrderTable = () => {
   const [activeTab, setActiveTab] = useState('placed');
   const [activeTabs, setActiveTabs] = useState('day');
   const [startDate, setStartDate] = useState(new Date());
-  const [formattedStartDate, setFormattedStartDate] = useState(format(new Date(), 'MMM yyyy'));
+  const [formattedStartDate, setFormattedStartDate] = useState(format(new Date(), 'dd MMM yyyy'));
   console.log(startDate, "startDate")
   const [selectedDeliveryPerson, setSelectedDeliveryPerson] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
@@ -65,41 +65,33 @@ const OrderTable = () => {
   };
 
 
-  const fetchOrders = async (page) => {
-    console.log("calling orders")
-    setLoading(true);
-    try {
-      const response = await axios.get(`${baseURL}/api/orders/admin`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        }
+const fetchOrders = async (selectedDate) => {
+  console.log("calling orders with", selectedDate);
+  setLoading(true);
+  try {
+    const response = await axios.get(`${baseURL}/api/orders/admin`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: { date: selectedDate } // send date as query param
+    });
 
-      });
-
-      console.log(response)
-      console.log(response.data, "response of orders")
-
-      if (Array.isArray(response?.data?.orders)) {
-        setOrderData(response?.data?.orders);
-        setPagination(prev => ({
-          ...prev,
-          totalRows: response?.data?.orders?.length
-        }));
-      } else {
-        throw new Error("Unexpected response format");
-      }
-    } catch (error) {
-      console.error('Error fetching orders:', error);
-      // Swal.fire({
-      //   title: "Error",
-      //   text: "Failed to fetch orders",
-      //   icon: "error",
-      //   confirmButtonColor: "#fc2c54",
-      // });
-    } finally {
-      setLoading(false);
+    if (Array.isArray(response?.data?.orders)) {
+      setOrderData(response?.data?.orders);
+      setPagination(prev => ({
+        ...prev,
+        totalRows: response?.data?.orders?.length
+      }));
+    } else {
+      throw new Error("Unexpected response format");
     }
-  };
+  } catch (error) {
+    console.error('Error fetching orders:', error);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
 
 
@@ -113,7 +105,6 @@ const OrderTable = () => {
           },
         }
       );
-      console.log(response);
       setDeliveryPersons(response.data.deliveryPersons);
     } catch (error) {
       console.error("Error fetching delivery persons:", error);
@@ -126,66 +117,66 @@ const OrderTable = () => {
   }, []);
 
   useEffect(() => {
-    fetchOrders();
+    fetchOrders(formattedStartDate);
 
-  }, [activeTab, activeTabs, formattedStartDate]);
+  }, [formattedStartDate]);
 
- const getBadgeColor = (status, type) => {
-  if (!status) return "secondary"; // default if empty
-  const normalized = status.toLowerCase();
+  const getBadgeColor = (status, type) => {
+    if (!status) return "secondary"; // default if empty
+    const normalized = status.toLowerCase();
 
-  if (type === "paymentStatus") {
-    return (
-      {
-        pending: "danger",
-        failed: "danger",
-        paid: "success",
-        success: "success",
-      }[normalized] || "secondary"
-    );
-  }
+    if (type === "paymentStatus") {
+      return (
+        {
+          pending: "danger",
+          failed: "danger",
+          paid: "success",
+          success: "success",
+        }[normalized] || "secondary"
+      );
+    }
 
-  if (type === "order") {
-    return (
-      {
-        placed: "warning",
-        confirmed: "info",
-        processing: "primary",
-        shipped: "primary",
-        delivered: "success",
-        cancelled: "danger",
-        returned: "secondary",
-        pending: "danger",
-      }[normalized] || "secondary"
-    );
-  }
+    if (type === "order") {
+      return (
+        {
+          placed: "warning",
+          confirmed: "info",
+          processing: "primary",
+          shipped: "primary",
+          delivered: "success",
+          cancelled: "danger",
+          returned: "secondary",
+          pending: "danger",
+        }[normalized] || "secondary"
+      );
+    }
 
-  if (type === "delivery") {
-    return (
-      {
-        pending: "danger",
-        in_transit: "primary",
-        delivered: "success",
-        accepted: "success",
-        cancelled: "danger",
-        failed: "danger",
-      }[normalized] || "secondary"
-    );
-  }
+    if (type === "delivery") {
+      return (
+        {
+          pending: "danger",
+          in_transit: "primary",
+          delivered: "success",
+          accepted: "success",
+          cancelled: "danger",
+          failed: "danger",
+        }[normalized] || "secondary"
+      );
+    }
 
-  if (type === "placed") {
-    return (
-      {
-        placed: "warning",
-        cancelled: "danger",
-        delivered: "success",
-        failed: "danger",
-      }[normalized] || "secondary"
-    );
-  }
+    if (type === "placed") {
+      return (
+        {
+          placed: "warning",
+          cancelled: "danger",
+          delivered: "success",
+          failed: "danger",
+        }[normalized] || "secondary"
+      );
+    }
 
-  return "secondary";
-};
+    return "secondary";
+  };
 
 
   const handleDeliveryAssign = async () => {
@@ -319,7 +310,7 @@ const OrderTable = () => {
   const columns = [
     {
       name: "Order ID",
-      selector: (row) => row._id,
+      selector: (row) => row.orderId,
       sortable: true,
       width: "150px",
     },
@@ -331,7 +322,7 @@ const OrderTable = () => {
       cell: (row) => (
         <div >
           <div>{row.user?.name || "N/A"}</div>
-          <small className="text-muted">{row.user?.email || "N/A"}</small >
+          <small className="text-muted">{row.user?.mobile_number || "N/A"}</small >
 
         </div>
       ),
@@ -500,7 +491,6 @@ const OrderTable = () => {
       cell: (row) => (
         <div
           className="d-flex align-items-center text-inherit hover:text-blue-600 hover:underline hover:cursor-pointer "
-          onClick={() => navigate(`/orders/suborder/${row._id}`)}
         >
           <img
             src={row.product?.image?.[0]}
@@ -545,16 +535,7 @@ const OrderTable = () => {
       ),
     },
 
-    {
-      name: "Delivery Status",
-      cell: (row) => (
-        <div>
-          <Badge color={getBadgeColor(row.status, "delivery")}>
-            {row.status?.toUpperCase()}
-          </Badge>
-        </div>
-      ),
-    },
+
 
   ];
 
@@ -577,20 +558,20 @@ const OrderTable = () => {
     return (
       order._id?.toLowerCase().includes(search) ||
       order?.user?.name?.toLowerCase().includes(search) ||
-      order?.user?.mobile?.toLowerCase().includes(search) ||
+      order?.user?.mobile_number?.toLowerCase().includes(search) ||
       order?.coupon?.toLowerCase().includes(search)
     );
   });
 
 
+const handleDateChange = (date) => {
+  const formatted = format(date, 'dd MMM yyyy'); // e.g. "12 Sep 2025"
+  console.log(formatted, "formatted date");
+  setStartDate(date);
+  setFormattedStartDate(formatted);
+  fetchOrders(formatted);   // pass formatted date to fetchOrders
+};
 
-  const handleDateChange = (date) => {
-    const formatted = format(date, 'MMM yyyy'); // e.g., "Jun 2025"
-    console.log(formatted, "formatted date");
-    setStartDate(date);
-    setFormattedStartDate(formatted);
-    fetchOrders();
-  };
 
   console.log(filteredOrders, "filteredorders");
 
@@ -682,12 +663,11 @@ const OrderTable = () => {
               className="form-control datepickerr digits mx-2"
               selected={startDate}
               onChange={handleDateChange}
-              showMonthYearPicker
-              dateFormat="MMM yyyy"
-              yearItemNumber={9}
+              dateFormat="dd MMM yyyy"
               showIcon
-              placeholderText="Last Year"
+              placeholderText="Select Date"
             />
+
           </div>
           <div className="file-content">
             <Media>

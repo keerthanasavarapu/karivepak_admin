@@ -11,6 +11,7 @@ const UserTable = () => {
     const [usersData, setUsersData] = useState([]);
     const [allUsers, setAllUsers] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
+    const [searchQuery, setSearchQuery] = useState("");
     const [pagination, setPagination] = useState({
         page: 1,
         perPage: 10,
@@ -25,18 +26,13 @@ const UserTable = () => {
             cell: (row) => (
                 <div>
                     <div>{row?.name}</div>
-                    <div style={{ fontSize: "12px", color: "gray" }}>{row?.mobile}</div>
+                    <div style={{ fontSize: "12px", color: "gray" }}>{row?.mobile_number}</div>
                 </div>
             ),
         },
         {
             name: "User Email",
             selector: (row) => row?.email || "NA",
-            sortable: true,
-        },
-        {
-            name: "KYC Status",
-            selector: (row) => (row?.kyc?.status ? row.kyc.status : "NA"),
             sortable: true,
         },
         {
@@ -81,11 +77,12 @@ const UserTable = () => {
             const response = await axios.get(`${baseURL}/api/user/getallusers?all=true`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            console.log(response)
-
             if (response.status === 200) {
-                setAllUsers(response?.data?.data); // 'data' holds users in apiResponse
+                //  users with a "role" property
+                const onlyUsers = response?.data?.data?.filter(u => u.role === 'user');
+                setAllUsers(onlyUsers);
             }
+
         } catch (error) {
             console.error("Failed to fetch all users", error);
         }
@@ -103,18 +100,13 @@ const UserTable = () => {
         setSearchTerm(e.target.value);
     };
 
-    const filteredData = searchTerm
-        ? allUsers.filter((user) => {
-            const name = `${user?.name}`.toLowerCase();
-            const email = user?.email?.toLowerCase() || "";
-            const address = user?.address?.address?.toLowerCase() || "";
-            return (
-                name.includes(searchTerm.toLowerCase()) ||
-                email.includes(searchTerm.toLowerCase()) ||
-                address.includes(searchTerm.toLowerCase())
-            );
-        })
-        : usersData;
+    const filteredData = allUsers.filter(
+        (t) =>
+            t?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            t?.email?.toString().includes(searchQuery.toLowerCase()) ||
+            t?.mobile_number?.toLowerCase().includes(searchQuery.toLowerCase())
+
+    );
 
     const handlePageChange = (page) => {
         setPagination((prev) => ({ ...prev, page }));
@@ -138,8 +130,8 @@ const UserTable = () => {
                             <i className="fa fa-search"></i>
                             <input
                                 className="form-control border-0 ms-2"
-                                value={searchTerm}
-                                onChange={handleSearch}
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
                                 type="text"
                                 placeholder="Search..."
                             />
@@ -167,7 +159,7 @@ const UserTable = () => {
                 <Loader />
             ) : (
                 <DataTable
-                    data={allUsers}
+                    data={filteredData}
                     columns={userCols}
                     pagination
                     paginationServer

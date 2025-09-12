@@ -42,7 +42,6 @@ export const MENUITEMS = [
         badge: "badge badge-light-danger",
         children: [
           { path: `/orders`, title: "Orders", type: "link" },
-          { path: `/return-orders`, title: "Return-orders", type: "link" },
          
         ],
         // roles: ['Admin','Renter']
