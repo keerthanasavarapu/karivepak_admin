@@ -38,6 +38,10 @@ import Posts from '../Components/Pages/MainPages/Posts/index'
 import Services from '../Components/Pages/MainPages/Services/Services';
 import DeliveryPersonTable from '../Components/Pages/MainPages/Users/DeliveryPersonTable';
 import Invoice from "../Components/Application/Ecommerce/Invoice/index"
+import GstTable from '../Components/Pages/MainPages/Gst/index';
+import Deliverycharge  from "../Components/Pages/MainPages/deliveryCharge/index"
+
+
 
 
 // new comps
@@ -51,7 +55,10 @@ let routes = [
   { path: `/transactions`, Component: <Transactions /> },
   // { path: `/statistics`, Component: <Statistics /> },
   { path: `/transactions`, Component: <Transactions /> },
+    {path: `/gst`, Component: <GstTable /> },
   { path: `/customers`, Component: <Customers /> },
+   {path: `/delivery-charges`, Component:<Deliverycharge/>},
+
   // { path: `/setting`, Component: <Settings /> },
   { path: `/help`, Component: <Help /> },
 

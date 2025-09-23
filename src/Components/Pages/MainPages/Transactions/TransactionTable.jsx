@@ -61,7 +61,7 @@ const TransactionTable = () => {
           Authorization: `${token}`,
         },
       });
-
+console.log(res?.data?.data,"response of transa")
       const data = res?.data?.data || [];
       setTransactions(data.reverse());
     } catch (error) {

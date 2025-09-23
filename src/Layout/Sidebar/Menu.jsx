@@ -215,6 +215,19 @@ export const MENUITEMS = [
         path: `/content-management`,
         roles: ['admin']
       },
+                    {
+        title: 'Settings',
+        icon: 'customer',
+        active: false,
+        type: "sub",
+        path: ``,
+        badge: "badge badge-light-danger",
+        children: [
+          { path: `/gst`, title: "GST", type: "link" },
+          { path: `/delivery-charges`, title: "Delivery charges", type: "link" },
+        ],
+        // roles: ['Admin']
+      },
       // {
       //   title: 'Log Activity',
       //   icon: 'log',

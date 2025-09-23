@@ -225,7 +225,6 @@ function ContentManagementTable() {
 
                 if (files) {
                     console.log("files", files);
-                    // formData.append('image', files);
                     files.forEach((image, index) => {
                         formData.append(`image_[${index}]`, image);
                     })

@@ -46,10 +46,10 @@ const OrderTable = () => {
   console.log(showDeliveryModal, "showDeliveryModal");
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [selectedSubOrder, setSelectedSubOrder] = useState(null);
-  const [activeTab, setActiveTab] = useState('placed');
+  const [activeTab, setActiveTab] = useState('Placed');
   const [activeTabs, setActiveTabs] = useState('day');
-  const [startDate, setStartDate] = useState(new Date());
-  const [formattedStartDate, setFormattedStartDate] = useState(format(new Date(), 'dd MMM yyyy'));
+  const [startDate, setStartDate] = useState();
+  const [formattedStartDate, setFormattedStartDate] = useState('');
   console.log(startDate, "startDate")
   const [selectedDeliveryPerson, setSelectedDeliveryPerson] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
@@ -73,7 +73,7 @@ const fetchOrders = async (selectedDate) => {
       headers: {
         Authorization: `Bearer ${token}`,
       },
-      params: { date: selectedDate } // send date as query param
+      params: { date: selectedDate , status:activeTab} // send date as query param
     });
 
     if (Array.isArray(response?.data?.orders)) {
@@ -119,7 +119,7 @@ const fetchOrders = async (selectedDate) => {
   useEffect(() => {
     fetchOrders(formattedStartDate);
 
-  }, [formattedStartDate]);
+  }, [formattedStartDate,activeTab]);
 
   const getBadgeColor = (status, type) => {
     if (!status) return "secondary"; // default if empty
@@ -328,11 +328,44 @@ const fetchOrders = async (selectedDate) => {
       ),
     },
     {
-      name: "Items",
+      name: "Items cost",
       selector: (row) => row.items.length || 0,
       sortable: true,
-      cell: (row) => row.items.length || 0,
-      width: "80px"
+      cell: (row) => (
+                <div className="flex items-center gap-2">
+
+          <small className="text-muted">₹ {row.totals?.subtotal || "N/A"}</small >
+                    <div>({row.items.length|| 0 })</div>
+
+        </div>
+      ),
+      // width: "100px"
+    },
+        {
+      name: "GST",
+      selector: (row) => row.gstAmounts?.totalGST,
+      sortable: true,
+      cell: (row) => (
+        <span className="fw-bold">
+          ₹
+          {row.gstAmounts?.totalGST?.toLocaleString("en-IN", {
+            maximumFractionDigits: 2,
+          })}
+        </span>
+      ),
+    },
+            {
+      name: "Handling Fee",
+      selector: (row) => row.handlingFee,
+      sortable: true,
+      cell: (row) => (
+        <span className="fw-bold">
+          ₹
+          {row.handlingFee?.toLocaleString("en-IN", {
+            maximumFractionDigits: 2,
+          })}
+        </span>
+      ),
     },
 
     {
@@ -480,12 +513,6 @@ const fetchOrders = async (selectedDate) => {
   const subOrderColumns = [
 
     {
-      name: "Product ID",
-      selector: (row) => row._id,
-      sortable: true,
-      width: "250px",
-    },
-    {
       name: "Product Image",
       selector: (row) => row.items?.product,
       cell: (row) => (
@@ -556,7 +583,7 @@ const fetchOrders = async (selectedDate) => {
   const filteredOrders = orderData.filter((order) => {
     const search = searchTerm.toLowerCase();
     return (
-      order._id?.toLowerCase().includes(search) ||
+      order?.orderId?.toLowerCase().includes(search) ||
       order?.user?.name?.toLowerCase().includes(search) ||
       order?.user?.mobile_number?.toLowerCase().includes(search) ||
       order?.coupon?.toLowerCase().includes(search)
@@ -577,83 +604,40 @@ const handleDateChange = (date) => {
 
   return (
     <Fragment>
-      {/* <div className="card-header d-flex align-items-center justify-between" style={{ padding: '15px 30px' }}>
+      <div className="card-header d-flex align-items-center justify-between" style={{ padding: '15px 30px' }}>
         <Nav tabs className='product_variant_tabs'>
           <NavItem>
-            <NavLink className={activeTab === 'placed' ? 'active' : ''} onClick={() => handleTabClick('placed')}>
+            <NavLink className={activeTab === 'Placed' ? 'active' : ''} onClick={() => handleTabClick('Placed')}>
               Placed
             </NavLink>
           </NavItem>
           <NavItem>
-            <NavLink className={activeTab === 'confirmed' ? 'active' : ''} onClick={() => handleTabClick('confirmed')}>
+            <NavLink className={activeTab === 'Confirmed' ? 'active' : ''} onClick={() => handleTabClick('Confirmed')}>
               Confirmed
             </NavLink>
           </NavItem>
           <NavItem>
-            <NavLink className={activeTab === 'processing' ? 'active' : ''} onClick={() => handleTabClick('processing')}>
-              Processing
-            </NavLink>
-          </NavItem>
-          <NavItem>
-            <NavLink className={activeTab === 'shipped' ? 'active' : ''} onClick={() => handleTabClick('shipped')}>
+            <NavLink className={activeTab === 'Shipped' ? 'active' : ''} onClick={() => handleTabClick('Shipped')}>
               Shipped
             </NavLink>
           </NavItem>
           <NavItem>
-            <NavLink className={activeTab === 'delivered' ? 'active' : ''} onClick={() => handleTabClick('delivered')}>
+            <NavLink className={activeTab === 'Delivered' ? 'active' : ''} onClick={() => handleTabClick('Delivered')}>
               Delivered
             </NavLink>
           </NavItem>
           <NavItem>
-            <NavLink className={activeTab === 'cancelled' ? 'active' : ''} onClick={() => handleTabClick('cancelled')}>
+            <NavLink className={activeTab === 'Cancelled' ? 'active' : ''} onClick={() => handleTabClick('Cancelled')}>
               Cancelled
             </NavLink>
           </NavItem>
           <NavItem>
-            <NavLink className={activeTab === 'returned' ? 'active' : ''} onClick={() => handleTabClick('returned')}>
+            <NavLink className={activeTab === 'Returned' ? 'active' : ''} onClick={() => handleTabClick('Returned')}>
               Returned
             </NavLink>
           </NavItem>
         </Nav>
-        <Nav tabs className='product_variant_tabs'>
-          <NavItem>
-            <NavLink className={activeTabs === 'day' ? 'active' : ''} onClick={() => handleTabClicks('day')}>
-              Today
-            </NavLink>
-          </NavItem>
-          <NavItem>
-            <NavLink className={activeTabs === 'week' ? 'active' : ''} onClick={() => handleTabClicks('week')}>
-              Weekly
-            </NavLink>
-          </NavItem>
-          <NavItem>
-            <NavLink className={activeTabs === 'month' ? 'active' : ''} onClick={() => handleTabClicks('month')}>
-              Monthly
-            </NavLink>
-          </NavItem>
-
-
-        </Nav>
-
-        <div>
-          <DatePicker
-            className="form-control datepickerr digits mx-2"
-            selected={startDate}
-            onChange={(date) => {
-              setStartDate(date);
-              fetchDashboardData(date); //  fetch data on change
-            }}
-            showMonthYearPicker //  Enables month + year picker view
-            dateFormat="MMM yyyy" //  Displays like "Jan 2025"
-            yearItemNumber={9}
-            showIcon
-            placeholderText="Last Year"
-          />
-
-
-        </div>
-
-      </div> */}
+      </div>
       <Row className="pb-4">
         <div className="d-flex justify-content-between align-items-center">
           <H4>Order List</H4>
