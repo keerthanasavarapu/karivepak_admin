@@ -14,6 +14,7 @@ import AnimationThemeContext from "../_helper/AnimationTheme";
 import ConfigDB from "../Config/ThemeConfig";
 import Loader from "./Loader";
 import { MENUITEMS } from "./Sidebar/Menu";
+import FirebaseComponent from "../Components/FirebaseComponent";
 
 const AppLayout = ({ children, classNames, ...rest }) => {
   const { layout } = useContext(CustomizerContext);
@@ -45,6 +46,7 @@ const AppLayout = ({ children, classNames, ...rest }) => {
 
   return (
     <Fragment>
+    <FirebaseComponent/>
       <Loader />
       <Taptop />
       <div className={`page-wrapper ${layout1}`} sidebar-layout={sideBarIcon} id="pageWrapper">
