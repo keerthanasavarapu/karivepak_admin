@@ -162,7 +162,7 @@ console.log(res?.data?.data,"response of transa")
       selector: (row) => row.amount,
       sortable: true,
       center: true,
-      cell: (row) => `₹${row.amount}`,
+      cell: (row) => `₹${Number(row.amount).toFixed(2)}`,
     },
     {
       name: "Status",

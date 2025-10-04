@@ -367,6 +367,19 @@ const fetchOrders = async (selectedDate) => {
         </span>
       ),
     },
+        {
+      name: "Small Cart Charges",
+      selector: (row) => row.smallCartFee,
+      sortable: true,
+      cell: (row) => (
+        <span className="fw-bold">
+          ₹
+          {row.smallCartFee?.toLocaleString("en-IN", {
+            maximumFractionDigits: 2,
+          })}
+        </span>
+      ),
+    },
 
     {
       name: "Delivery charges",
