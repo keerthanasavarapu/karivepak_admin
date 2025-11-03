@@ -225,6 +225,8 @@ export const MENUITEMS = [
         children: [
           { path: `/gst`, title: "GST", type: "link" },
           { path: `/delivery-charges`, title: "Delivery charges", type: "link" },
+          { path: `/stores`, title: "Stores", type: "link" },
+
         ],
         // roles: ['Admin']
       },

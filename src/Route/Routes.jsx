@@ -39,7 +39,8 @@ import Services from '../Components/Pages/MainPages/Services/Services';
 import DeliveryPersonTable from '../Components/Pages/MainPages/Users/DeliveryPersonTable';
 import Invoice from "../Components/Application/Ecommerce/Invoice/index"
 import GstTable from '../Components/Pages/MainPages/Gst/index';
-import Deliverycharge  from "../Components/Pages/MainPages/deliveryCharge/index"
+import Deliverycharge  from "../Components/Pages/MainPages/deliveryCharge/index";
+import LocationSearch from "../Components/Pages/MainPages/Location"
 
 
 
@@ -58,6 +59,7 @@ let routes = [
     {path: `/gst`, Component: <GstTable /> },
   { path: `/customers`, Component: <Customers /> },
    {path: `/delivery-charges`, Component:<Deliverycharge/>},
+   {path: `/stores`, Component:<LocationSearch/>},
 
   // { path: `/setting`, Component: <Settings /> },
   { path: `/help`, Component: <Help /> },
