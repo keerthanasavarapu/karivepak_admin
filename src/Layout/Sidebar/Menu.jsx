@@ -215,6 +215,14 @@ export const MENUITEMS = [
         path: `/content-management`,
         roles: ['admin']
       },
+            {
+        title: 'Reviews',
+        icon: 'role',
+        type: 'link',
+        active: false,
+        path: `/reviews`,
+        roles: ['admin']
+      },
                     {
         title: 'Settings',
         icon: 'customer',
@@ -226,6 +234,7 @@ export const MENUITEMS = [
           { path: `/gst`, title: "GST", type: "link" },
           { path: `/delivery-charges`, title: "Delivery charges", type: "link" },
           { path: `/stores`, title: "Stores", type: "link" },
+          {path: `/handling-fee`, title: "Handling Fee", type: "link" },
 
         ],
         // roles: ['Admin']

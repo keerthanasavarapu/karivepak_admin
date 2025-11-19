@@ -1,1 +1,1 @@
-export const MAP_API = "AIzaSyBXQzXg_Tlp45pU6CO_ecDYRlT8BD1Vndk";
+export const MAP_API = "AIzaSyDkqAfGapHVHKyDNmVkfYImOVmCToTKRx8";

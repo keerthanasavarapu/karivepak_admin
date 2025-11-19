@@ -65,32 +65,32 @@ const OrderTable = () => {
   };
 
 
-const fetchOrders = async (selectedDate) => {
-  console.log("calling orders with", selectedDate);
-  setLoading(true);
-  try {
-    const response = await axios.get(`${baseURL}/api/orders/admin`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      params: { date: selectedDate , status:activeTab} // send date as query param
-    });
+  const fetchOrders = async (selectedDate) => {
+    console.log("calling orders with", selectedDate);
+    setLoading(true);
+    try {
+      const response = await axios.get(`${baseURL}/api/orders/admin`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        params: { date: selectedDate, status: activeTab } // send date as query param
+      });
 
-    if (Array.isArray(response?.data?.orders)) {
-      setOrderData(response?.data?.orders);
-      setPagination(prev => ({
-        ...prev,
-        totalRows: response?.data?.orders?.length
-      }));
-    } else {
-      throw new Error("Unexpected response format");
+      if (Array.isArray(response?.data?.orders)) {
+        setOrderData(response?.data?.orders);
+        setPagination(prev => ({
+          ...prev,
+          totalRows: response?.data?.orders?.length
+        }));
+      } else {
+        throw new Error("Unexpected response format");
+      }
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error('Error fetching orders:', error);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
 
 
@@ -119,7 +119,7 @@ const fetchOrders = async (selectedDate) => {
   useEffect(() => {
     fetchOrders(formattedStartDate);
 
-  }, [formattedStartDate,activeTab]);
+  }, [formattedStartDate, activeTab]);
 
   const getBadgeColor = (status, type) => {
     if (!status) return "secondary"; // default if empty
@@ -323,7 +323,6 @@ const fetchOrders = async (selectedDate) => {
         <div >
           <div>{row.user?.name || "N/A"}</div>
           <small className="text-muted">{row.user?.mobile_number || "N/A"}</small >
-
         </div>
       ),
     },
@@ -332,16 +331,16 @@ const fetchOrders = async (selectedDate) => {
       selector: (row) => row.items.length || 0,
       sortable: true,
       cell: (row) => (
-                <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
 
           <small className="text-muted">₹ {row.totals?.subtotal || "N/A"}</small >
-                    <div>({row.items.length|| 0 })</div>
+          <div>({row.items.length || 0})</div>
 
         </div>
       ),
       // width: "100px"
     },
-        {
+    {
       name: "GST",
       selector: (row) => row.gstAmounts?.totalGST,
       sortable: true,
@@ -354,7 +353,7 @@ const fetchOrders = async (selectedDate) => {
         </span>
       ),
     },
-            {
+    {
       name: "Handling Fee",
       selector: (row) => row.handlingFee,
       sortable: true,
@@ -367,7 +366,7 @@ const fetchOrders = async (selectedDate) => {
         </span>
       ),
     },
-        {
+    {
       name: "Small Cart Charges",
       selector: (row) => row.smallCartFee,
       sortable: true,
@@ -604,13 +603,20 @@ const fetchOrders = async (selectedDate) => {
   });
 
 
-const handleDateChange = (date) => {
-  const formatted = format(date, 'dd MMM yyyy'); // e.g. "12 Sep 2025"
-  console.log(formatted, "formatted date");
-  setStartDate(date);
-  setFormattedStartDate(formatted);
-  fetchOrders(formatted);   // pass formatted date to fetchOrders
-};
+  const handleDateChange = (date) => {
+    if (!date) {
+      setStartDate(null);
+      setFormattedStartDate("");
+      fetchOrders("");
+      return;
+    }
+
+    const formatted = format(date, 'dd MMM yyyy');
+    setStartDate(date);
+    setFormattedStartDate(formatted);
+    fetchOrders(formatted);
+  };
+
 
 
   console.log(filteredOrders, "filteredorders");
@@ -663,6 +669,9 @@ const handleDateChange = (date) => {
               dateFormat="dd MMM yyyy"
               showIcon
               placeholderText="Select Date"
+              showMonthDropdown
+              showYearDropdown
+              dropdownMode="select"
             />
 
           </div>

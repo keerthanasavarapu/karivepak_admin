@@ -82,7 +82,7 @@ function ViewOrder() {
                         <Col xs="6">
                             <p className="mb-0 d-flex align-items-center">
                                 Order Id:{" "}
-                                <b className="ms-1">{orderDetails?._id || "N/A"}</b>{" "}
+                                <b className="ms-1">{orderDetails?.orderId || "N/A"}</b>{" "}
                                 <span style={{ color: "#E1E6EF" }} className="mx-2">
                                     |
                                 </span>{" "}
@@ -185,7 +185,7 @@ function ViewOrder() {
                                                 </th>
                                                 <td>
                                                     <span className="border-0 total_value">
-                                                        ₹ {orderDetails?.grandTotal || 0}
+                                                        ₹ {Number(orderDetails?.grandTotal || 0).toFixed(2)}  
                                                     </span>
                                                 </td>
                                             </tr>
@@ -286,7 +286,7 @@ function ViewOrder() {
                                             <tr>
                                                 <th>Status</th>
                                                 <th>Note</th>
-                                                <th>Updated By</th>
+                                                {/* <th>Updated By</th> */}
                                                 <th>Time</th>
                                             </tr>
                                         </thead>
@@ -296,7 +296,7 @@ function ViewOrder() {
                                                     <tr key={index}>
                                                         <td>{capitalizeFirstLetter(item?.status)}</td>
                                                         <td>{item?.note}</td>
-                                                        <td>{item?.updatedBy}</td>
+                                                        {/* <td>{item?.updatedBy}</td> */}
                                                         <td>
                                                             {moment(item?.timestamp).format(
                                                                 "DD MMM YYYY, h:mm A"

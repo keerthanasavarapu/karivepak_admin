@@ -41,6 +41,8 @@ import Invoice from "../Components/Application/Ecommerce/Invoice/index"
 import GstTable from '../Components/Pages/MainPages/Gst/index';
 import Deliverycharge  from "../Components/Pages/MainPages/deliveryCharge/index";
 import LocationSearch from "../Components/Pages/MainPages/Location"
+import HandlingFeeManager from '../Components/Pages/MainPages/HandlingFee';
+import ReviewTable from '../Components/Pages/MainPages/reviews/index';
 
 
 
@@ -60,6 +62,7 @@ let routes = [
   { path: `/customers`, Component: <Customers /> },
    {path: `/delivery-charges`, Component:<Deliverycharge/>},
    {path: `/stores`, Component:<LocationSearch/>},
+   {path: `/handling-fee`, Component:<HandlingFeeManager/>},
 
   // { path: `/setting`, Component: <Settings /> },
   { path: `/help`, Component: <Help /> },
@@ -86,6 +89,7 @@ let routes = [
 
   // Variant Route Start 
   { path: `/variants`, Component: <Variants /> },
+  {path:`/reviews`, Component:<ReviewTable/>},
 
   // service Route Start
   { path: `/services`, Component: <Services /> },

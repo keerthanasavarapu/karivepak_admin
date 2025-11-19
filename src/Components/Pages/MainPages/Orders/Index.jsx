@@ -12,11 +12,12 @@ const Orders = () => {
   const getCount = async () => {
     const token = await JSON.parse(localStorage.getItem("token"));
     try {
-      await axios.get(`${baseURL}/api/orders/analytics`, {
+      await axios.get(`${baseURL}/api/orders/order-counts`, {
         headers: {
           Authorization: `Bearer ${token}`,
         }
       }).then((res) => {
+        console.log("order analytics", res);
         if (res && res.status === 200) {
           setCountData(res?.data?.data);
 
@@ -57,7 +58,7 @@ const Orders = () => {
             <CardBody>
               <div className='d-flex align-items-center justify-content-between'>
                 <div className='d-flex align-items-center gap-2'>
-                  <img src={square} alt="" className='square_box' />  <h6 className="mb-0"> Total Completed SubOrders</h6>
+                  <img src={square} alt="" className='square_box' />  <h6 className="mb-0"> Total Completed Orders</h6>
                 </div>
               </div>
               <div className='d-flex justify-content-between mt-3' >

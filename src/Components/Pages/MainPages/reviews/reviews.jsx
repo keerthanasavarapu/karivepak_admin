@@ -5,8 +5,10 @@ import axios from "axios";
 import { baseURL } from "../../../../Services/api/baseURL";
 import Loader from "../../../Loader/Loader";
 import exportExcelUser from "../../../Reports/components/exportExcelCustomer";
+import Swal from "sweetalert2";
 
-const UserTable = () => {
+
+const ReviewTable = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [usersData, setUsersData] = useState([]);
     const [allUsers, setAllUsers] = useState([]);
@@ -17,45 +19,107 @@ const UserTable = () => {
         perPage: 10,
         totalRows: 0,
     });
+console.log("Users Data", usersData);
 
-    const userCols = [
+const handleDelete = async (id) => {
+    Swal.fire({
+        title: "Are you sure?",
+        text: "Do you really want to delete this review?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Yes, Delete",
+        cancelButtonText: "Cancel",
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            try {
+                const token = JSON.parse(localStorage.getItem("token"));
+
+                await axios.delete(`${baseURL}/api/reviews/${id}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+
+                Swal.fire("Deleted!", "Review has been deleted.", "success");
+
+                // Refresh list
+                fetchReviews();
+            } catch (error) {
+                console.error("Delete failed", error);
+                Swal.fire("Error!", "Something went wrong.", "error");
+            }
+        }
+    });
+};
+
+
+
+const userCols = [
+    {
+        name: "Product",
+        cell: (row) => (
+            <div className="d-flex align-items-center">
+                <img
+                    src={row?.productId?.image?.[0]}
+                    alt={row?.productId?.name}
+                    style={{ width: 40, height: 40, borderRadius: 5, marginRight: 10 }}
+                />
+                <span>{row?.productId?.name || "NA"}</span>
+            </div>
+        ),
+        sortable: true,
+        width: "200px",
+    },
+
+    {
+        name: "User",
+        selector: (row) => row?.userId?.name || "NA",
+        sortable: true,
+    },
+
+    {
+        name: "Rating",
+        selector: (row) => row?.rating || "NA",
+        sortable: true,
+        width: "90px",
+    },
+
+    {
+        name: "Title",
+        selector: (row) => row?.title || "NA",
+        sortable: true,
+    },
+
+    {
+        name: "Comment",
+        selector: (row) => row?.comment,
+        sortable: true,
+        width: "200px",
+        wrap: true,
+    },
         {
-            name: "User Name",
-            selector: (row) => row?.name,
-            sortable: true,
-            cell: (row) => (
-                <div>
-                    <div>{row?.name}</div>
-                    <div style={{ fontSize: "12px", color: "gray" }}>{row?.mobile_number}</div>
-                </div>
-            ),
-        },
-        {
-            name: "User Email",
-            selector: (row) => row?.email || "NA",
-            sortable: true,
-        },
-        {
-            name: "Role",
-            selector: (row) => row?.role,
-            sortable: true,
-            width: "120px",
-        },
-    ];
+        name: "Actions",
+        cell: (row) => (
+            <i
+                className="fa fa-trash text-danger"
+                style={{ cursor: "pointer", fontSize: "18px" }}
+                onClick={() => handleDelete(row?._id)}
+            ></i>
+        ),
+        width: "80px",
+    },
+];
 
     // Fetch paginated users
-    const fetchUsers = async (page = 1) => {
+    const fetchReviews = async (page = 1) => {
         setIsLoading(true);
         try {
             const token = JSON.parse(localStorage.getItem("token"));
-            const response = await axios.get(`${baseURL}/api/user/getallusers`, {
-                params: { page, limit: pagination.perPage },
+            const response = await axios.get(`${baseURL}/api/reviews`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-
+console.log("Reviews response", response?.data);
             if (response.status === 200) {
-                const users = response.data.data;
-                const totalUsers = response.data.data.length || response.data.totalUsers || 0;
+                const users = response.data;
+                const totalUsers = response.data.length || 0;
 
                 setUsersData(users);
                 setPagination((prev) => ({
@@ -70,51 +134,22 @@ const UserTable = () => {
         }
     };
 
-    // Fetch all users for Excel export
-    const fetchAllUsers = async () => {
-        try {
-            const token = JSON.parse(localStorage.getItem("token"));
-            const response = await axios.get(`${baseURL}/api/user/getallusers?all=true`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            if (response.status === 200) {
-                //  users with a "role" property
-                const onlyUsers = response?.data?.data?.filter(u => u.role === 'user');
-                setAllUsers(onlyUsers);
-            }
-
-        } catch (error) {
-            console.error("Failed to fetch all users", error);
-        }
-    };
 
     useEffect(() => {
-        fetchUsers(pagination.page);
+        fetchReviews(pagination.page);
     }, [pagination.page, pagination.perPage]);
 
-    useEffect(() => {
-        fetchAllUsers(); // For Excel export
-    }, []);
 
-    const handleSearch = (e) => {
-        setSearchTerm(e.target.value);
-    };
 
-    const filteredData = allUsers.filter(
-        (t) =>
-            t?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            t?.email?.toString().includes(searchQuery.toLowerCase()) ||
-            t?.mobile_number?.toLowerCase().includes(searchQuery.toLowerCase())
+const filteredData = usersData.filter((t) =>
+    t?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    t?.comment?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    t?.productId?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    t?.userId?.name?.toLowerCase().includes(searchQuery.toLowerCase())
+);
 
-    );
 
-    const handlePageChange = (page) => {
-        setPagination((prev) => ({ ...prev, page }));
-    };
 
-    const handleRowsPerPageChange = (perPage) => {
-        setPagination({ page: 1, perPage, totalRows: pagination.totalRows });
-    };
 
     const downloadExcelUserData = () => {
         exportExcelUser(allUsers);
@@ -172,4 +207,4 @@ const UserTable = () => {
     );
 };
 
-export default UserTable;
+export default ReviewTable;

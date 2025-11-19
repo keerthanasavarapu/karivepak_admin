@@ -33,28 +33,34 @@ import moment from 'moment';
 import { baseURL } from '../../../../Services/api/baseURL';
 import Loader from '../../../Loader/Loader';
 import { FaPen, FaTrash, FaTrashAlt } from 'react-icons/fa';
+import VariantDetailsView from './VariantDetailsView';
 
 
 const ProductsTable = () => {
     // State Management
+      const [loading, setLoading] = useState(false);
     const [products, setProducts] = useState({
         data: [],
-        loading: false,
-        totalRows: 0,
-        perPage: 10,
-        currentPage: 1
     });
-
+      const [pagination, setPagination] = useState({
+        page: 1,
+        perPage: 10,
+        totalRows: 0,
+      });
+    
     const [categories, setCategories] = useState([]);
     const [subCategories, setSubCategories] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [maincategory, setMainCategory] = useState([]);
+        const [selectedVariantForView, setSelectedVariantForView] = useState(null);
+    const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const [modal, setModal] = useState({
         isOpen: false,
         type: 'add',
         selectedProduct: null
     });
     console.log(modal.selectedProduct, "selected product")
+    
 
     const [formData, setFormData] = useState({
         productName: '',
@@ -78,29 +84,32 @@ const ProductsTable = () => {
 
     // Fetch Products
     const fetchProducts = async (page = 1, limit = 10, search = '') => {
-        setProducts(prev => ({ ...prev, loading: true }));
+        setLoading(true);
         try {
-            const response = await axios.get(`${baseURL}/api/products`, {
-                params: { page, limit, search },
+            const response = await axios.get(`${baseURL}/api/products/get-all-prodducts`, {
+            
                 headers: { Authorization: `Bearer ${token}` }
             });
             console.log(response, "response of products")
             setProducts({
                 data: response.data.products || [],
-                loading: false,
-                totalRows: response.data.total || 0,
-                perPage: limit,
-                currentPage: page
             });
+                    setPagination(prev => ({
+          ...prev,
+          totalRows: response?.data?.products?.length
+        }));
 
             return response.data;
         } catch (error) {
-            setProducts(prev => ({ ...prev, loading: false }));
+       
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
                 text: error.response?.data?.message || 'Failed to fetch products'
             });
+        }
+        finally {
+            setLoading(false);
         }
     };
 
@@ -137,11 +146,11 @@ const ProductsTable = () => {
 
     useEffect(() => {
         const delaySearch = setTimeout(() => {
-            fetchProducts(1, products.perPage, searchTerm);
+            fetchProducts(pagination?.page);
         }, 400);
 
         return () => clearTimeout(delaySearch);
-    }, [searchTerm, products.perPage]);
+    }, [searchTerm, pagination?.page]);
 
      const openModal = (type, product = null) => {
         setModal({ isOpen: true, type, selectedProduct: product });
@@ -265,7 +274,7 @@ const ProductsTable = () => {
             });
 
             closeModal();
-            fetchProducts(products.currentPage);
+            fetchProducts(pagination.page);
         } catch (error) {
             console.error('Submit Error:', error);
             Swal.fire({
@@ -296,7 +305,7 @@ const ProductsTable = () => {
             });
 
             closeModal();
-            fetchProducts(products.currentPage);
+            fetchProducts(pagination.page);
         } catch (error) {
             Swal.fire({
                 icon: 'error',
@@ -329,6 +338,18 @@ const ProductsTable = () => {
         {
             name: 'Product Name',
             selector: row => row.name,
+            cell: row => (
+                                <span
+                    className="text-inherit hover:text-blue-600 hover:underline hover:cursor-pointer"
+                    style={{cursor:"pointer"}}
+                    onClick={() => {
+                        setSelectedVariantForView(row);
+                        setIsViewModalOpen(true);
+                    }}
+                >
+                    {row.name}
+                </span>
+            ),
             sortable: true,
         },
         {
@@ -495,13 +516,11 @@ const ProductsTable = () => {
             <DataTable
                 columns={columns}
                 data={filteredProducts}
-                progressPending={products.loading}
-                progressComponent={<Loader />}
                 pagination
-                paginationServer
-                paginationTotalRows={products.totalRows}
-                onChangePage={(page) => fetchProducts(page, products.perPage, searchTerm)}
-                onChangeRowsPerPage={(newPerPage, page) => fetchProducts(page, newPerPage, searchTerm)}
+                paginationPerPage={10}
+                 paginationRowsPerPageOptions={[10, 25, 50]}
+                progressPending={loading}
+                progressComponent={<Loader />}
             />
 
 
@@ -817,7 +836,7 @@ const ProductsTable = () => {
                                     className="btn btn-red w-100"
                                     onClick={handleDeleteProduct}
                                     style={{ backgroundColor: '#dc3545', color: '#fff' }}
-                                    disabled={products.loading}
+                                    disabled={loading}
                                     data-testid="confirm-delete-button"
 
                                 >
@@ -836,6 +855,32 @@ const ProductsTable = () => {
                     </Button>
                 </ModalFooter> */}
                 </Container>
+            </Modal>
+
+                        <Modal
+                isOpen={isViewModalOpen}
+                toggle={() => setIsViewModalOpen(false)}
+                size="lg"
+            >
+                <ModalHeader toggle={() => setIsViewModalOpen(false)}>
+                    Variant Details
+                </ModalHeader>
+                <ModalBody>
+                    {selectedVariantForView && (
+                        <VariantDetailsView
+                            variantId={selectedVariantForView._id}
+                            token={token}
+                            onEdit={(variant) => {
+                                setIsViewModalOpen(false);
+                                openModal('edit', variant);
+                            }}
+                            onDelete={(variant) => {
+                                setIsViewModalOpen(false);
+                                openModal('delete', variant);
+                            }}
+                        />
+                    )}
+                </ModalBody>
             </Modal>
         </div>
     );

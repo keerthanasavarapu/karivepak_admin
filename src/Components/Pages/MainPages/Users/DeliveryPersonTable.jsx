@@ -20,7 +20,7 @@ import {
 import {
     MoreVertical,
 } from 'react-feather';
-import {  FaEye} from 'react-icons/fa';
+import { FaEye } from 'react-icons/fa';
 
 const DeliveryPersonTable = () => {
     const [isLoading, setIsLoading] = useState(false);
@@ -32,34 +32,34 @@ const DeliveryPersonTable = () => {
         perPage: 10,
         totalRows: 0,
     });
-      const [modal, setModal] = useState({
-            isOpen: false,
-            type: 'add',
-            selectedVariant: null
-        });
+    const [modal, setModal] = useState({
+        isOpen: false,
+        type: 'add',
+        selectedVariant: null
+    });
 
-        const handleDeliveryDelete=async(id)=>{
-            try {
+    const handleDeliveryDelete = async (id) => {
+        try {
             const token = await JSON.parse(localStorage.getItem('token'));
-            const response=await axios.delete(`${baseURL}/api/auth/delivery-persons/${id}`);
-            console.log(response,"response of delivery delete");
-                Swal.fire({
-                    title:"Done",
-                    text:response.data.message,
-                    confirmButtonColor:"red"
+            const response = await axios.delete(`${baseURL}/api/auth/delivery-persons/${id}`);
+            console.log(response, "response of delivery delete");
+            Swal.fire({
+                title: "Done",
+                text: response.data.message,
+                confirmButtonColor: "red"
 
-                });
-                fetchDeliveryPersons()
-            } catch (error) {
-                console.log(error,"error in delivery delete")
-                Swal.fire({
-                    title:"Done",
-                    text:error.response.data.message,
-                    confirmButtonColor:"red"
+            });
+            fetchDeliveryPersons()
+        } catch (error) {
+            console.log(error, "error in delivery delete")
+            Swal.fire({
+                title: "Done",
+                text: error.response.data.message,
+                confirmButtonColor: "red"
 
-                });
-            }
+            });
         }
+    }
 
     const columns = [
         {
@@ -92,28 +92,28 @@ const DeliveryPersonTable = () => {
                 year: "numeric",
             }),
         },
-               {
-                    name: 'Actions',
-                    cell: row => (
-                        <UncontrolledDropdown>
-                            <DropdownToggle tag="span" className="p-2 cursor-pointer">
-                                <MoreVertical color='#000' size={16} />
-                            </DropdownToggle>
-                            <DropdownMenu>
+        {
+            name: 'Actions',
+            cell: row => (
+                <UncontrolledDropdown>
+                    <DropdownToggle tag="span" className="p-2 cursor-pointer">
+                        <MoreVertical color='#000' size={16} />
+                    </DropdownToggle>
+                    <DropdownMenu>
 
-                                <DropdownItem
-                                    style={{ display: "flex", justifyContent: "center", alignItems: "center" }}
-                                    onClick={()=>handleDeliveryDelete(row._id)}
-                                >
-                                    <FaEye className='me-2' /> Delete
-                                </DropdownItem>
-                            </DropdownMenu>
-                        </UncontrolledDropdown>
-                    ),
-                    sortable: false,
-                    center: true,
-                    width: "100px",
-                }
+                        <DropdownItem
+                            style={{ display: "flex", justifyContent: "center", alignItems: "center" }}
+                            onClick={() => handleDeliveryDelete(row._id)}
+                        >
+                            <FaEye className='me-2' /> Delete
+                        </DropdownItem>
+                    </DropdownMenu>
+                </UncontrolledDropdown>
+            ),
+            sortable: false,
+            center: true,
+            width: "100px",
+        }
     ];
 
     const fetchDeliveryPersons = async (page) => {
@@ -127,7 +127,7 @@ const DeliveryPersonTable = () => {
                 },
                 headers: { Authorization: `Bearer ${token}` },
             });
-            console.log("getttdervv",response)
+            console.log("getttdervv", response)
             if (response.status === 200) {
                 setDeliveryData(response?.data?.deliveryPersons);
                 setPagination(prev => ({
@@ -155,8 +155,8 @@ const DeliveryPersonTable = () => {
             person?.mobile?.includes(searchTerm);
     });
 
-    console.log(filteredData,"delivery ");
-    
+    console.log(filteredData, "delivery ");
+
 
     const handlePageChange = (page) => {
         setPagination(prev => ({ ...prev, page }));
@@ -188,19 +188,19 @@ const DeliveryPersonTable = () => {
         } catch (error) {
             console.error('Error adding delivery person:', error);
             Swal.fire({
-                icon:"info",
-                title:"Note",
-                text:error.response.data.message,
-                confirmButtonText:"Ok"
+                icon: "info",
+                title: "Note",
+                text: error.response.data.message,
+                confirmButtonText: "Ok"
             })
         } finally {
             setIsLoading(false);
         }
     };
-    console.log(deliveryData,"delivery dataa")
+    console.log(deliveryData, "delivery dataa")
 
     const downloadExcelData = () => {
-        
+
         exportExcelUser(deliveryData);
     };
 
@@ -250,11 +250,10 @@ const DeliveryPersonTable = () => {
                     data={filteredData}
                     columns={columns}
                     pagination
-                    paginationServer
-                    paginationTotalRows={pagination.totalRows}
-                    onChangePage={handlePageChange}
-                    onChangeRowsPerPage={handleRowsPerPageChange}
-                    paginationPerPage={pagination.perPage}
+                    paginationPerPage={10}
+                    paginationRowsPerPageOptions={[10, 25, 50]}
+                    progressPending={isLoading}
+                    progressComponent={<Loader />}
                 />
             )}
 

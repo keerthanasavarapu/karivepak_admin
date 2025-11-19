@@ -32,16 +32,13 @@ const SubCategoriesTable = () => {
     });
     const [tableState, setTableState] = useState({
         data: [],
-        loading: false,
-        totalRows: 0,
-        perPage: 10,
-        currentPage: 1
     });
     const [pagination, setPagination] = useState({
         page: 1,
         perPage: 10,
         totalRows: 0
     });
+    const [loading, setLoading] = useState(false);
     const [categoriesData, setCategoriesData] = useState([]);
     const [modalState, setModalState] = useState({
         isAddModalOpen: false,
@@ -69,7 +66,7 @@ const SubCategoriesTable = () => {
             fetchCategories();
             fetchSubCategories();
         }
-    }, [userData.token, pagination.page, pagination.perPage]);
+    }, [userData.token, pagination.page]);
 
 
 
@@ -88,14 +85,11 @@ const SubCategoriesTable = () => {
 
 
     const fetchSubCategories = async () => {
-        setTableState(prev => ({ ...prev, loading: true }));
-        console.log("hittin API with pagination:", pagination);
+        setLoading(true);
+
         try {
             const response = await axios.get(`${baseURL}/api/category`, {
-                params: {
-                    page: pagination.page,
-                    limit: pagination.perPage
-                },
+
                 headers: {
                     Authorization: `Bearer ${userData.token}`
                 }
@@ -105,12 +99,19 @@ const SubCategoriesTable = () => {
             setTableState(prev => ({
                 ...prev,
                 data: response.data.categories || [],
-                totalRows: response.data.total || 0,
-                loading: false,
+
+
+            }));
+            setPagination(prev => ({
+                ...prev,
+                totalRows: response?.data?.categories?.length
             }));
         } catch (error) {
             console.error('Error fetching subcategories:', error);
-            setTableState(prev => ({ ...prev, loading: false }));
+
+        }
+        finally {
+            setLoading(false);
         }
     };
 
@@ -178,7 +179,7 @@ const SubCategoriesTable = () => {
                 confirmButtonColor: "#fc2c54",
             });
 
-            fetchSubCategories(tableState.currentPage);
+            fetchSubCategories(pagination?.page);
             resetModal();
         } catch (error) {
             console.error("Subcategory error:", error);
@@ -206,7 +207,7 @@ const SubCategoriesTable = () => {
                 confirmButtonColor: "#fc2c54",
             });
 
-            fetchSubCategories(tableState.currentPage);
+            fetchSubCategories(pagination?.page);
             resetModal();
         } catch (error) {
             Swal.fire({
@@ -372,17 +373,11 @@ const SubCategoriesTable = () => {
                     )
                 }
                 pagination
-                paginationServer
-                progressPending={tableState.loading}
+                paginationPerPage={10}
+                paginationRowsPerPageOptions={[10, 25, 50]}
+                progressPending={loading}
                 progressComponent={<Loader />}
-                paginationTotalRows={tableState.totalRows}
-                onChangePage={(page) => {
-                    setPagination(prev => ({ ...prev, page }));
-                }}
-                onChangeRowsPerPage={(newPerPage, page) => {
-                    setPagination(prev => ({ ...prev, perPage: newPerPage, page }));
-                }}
-                paginationPerPage={pagination.perPage}
+
             />
 
 

@@ -607,10 +607,10 @@ function ContentManagementTable() {
                         </Col>
                         <Col md={6} lg={6} xl={6} xxl={6}>
                             <div className="file-content file-content1 justify-content-end">
-                                <div className='mb-0 form-group position-relative search_outer d-flex align-items-center'>
+                                {/* <div className='mb-0 form-group position-relative search_outer d-flex align-items-center'>
                                     <i className='fa fa-search' style={{ top: 'unset' }}></i>
                                     <input className='form-control border-0' style={{ maxWidth: '195px' }} onChange={(e) => debouncedSearch(e.target.value)} type='text' placeholder='Search...' />
-                                </div>
+                                </div> */}
                                 <Button className='btn btn-primary d-flex align-items-center ms-3' onClick={toggleModal}>
                                     <PlusCircle />
                                     Add Banner

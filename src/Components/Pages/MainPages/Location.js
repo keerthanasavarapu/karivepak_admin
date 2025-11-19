@@ -1,9 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
-import { MAP_API } from "./GMap";
+import { GOOGLE_MAP_API_KEY } from "../../../Services/api/baseURL";
 import { baseURL } from "../../../Services/api/baseURL";
-import { FaTrashAlt } from "react-icons/fa";
+import { FaEdit, FaTrashAlt } from "react-icons/fa";
 import Swal from "sweetalert2";
+
+
 
 const StoreLocationForm = () => {
   const [showModal, setShowModal] = useState(false);
@@ -11,6 +13,8 @@ const StoreLocationForm = () => {
   const [address, setAddress] = useState("");
   const [selectedCoords, setSelectedCoords] = useState({ lat: "", lng: "" });
   const [stores, setStores] = useState([]);
+  const [editId, setEditId] = useState(null);
+
   const autocompleteRef = useRef(null);
   const autocompleteInstance = useRef(null);
 
@@ -20,7 +24,7 @@ const StoreLocationForm = () => {
       callback();
     } else {
       const script = document.createElement("script");
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${MAP_API}&libraries=places`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAP_API_KEY}&libraries=places`;
       script.async = true;
       script.onload = callback;
       document.body.appendChild(script);
@@ -63,34 +67,54 @@ const StoreLocationForm = () => {
     fetchStores();
   }, []);
 
+  const handleEditStore = (store) => {
+    setEditId(store._id);
+    setStoreName(store.name);
+    setAddress(store.address);
+    setSelectedCoords({ lat: store.latitude, lng: store.longitude });
+    setShowModal(true);
+  };
+
   // ✅ Add new store
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!storeName || !address || !selectedCoords.lat) {
       Swal.fire("⚠️ Missing Fields", "Please fill all fields and select a valid location.", "warning");
       return;
     }
 
-    try {
-      const newStore = {
-        name: storeName,
-        address,
-        latitude: selectedCoords.lat,
-        longitude: selectedCoords.lng,
-      };
+    const payload = {
+      name: storeName,
+      address,
+      latitude: selectedCoords.lat,
+      longitude: selectedCoords.lng,
+    };
 
-      await axios.post(`${baseURL}/api/pickup-locations`, newStore);
-      Swal.fire("✅ Success", "Store location saved successfully!", "success");
-      setShowModal(false);
+    try {
+      if (editId) {
+        //  UPDATE
+        await axios.put(`${baseURL}/api/pickup-locations/${editId}`, payload);
+        Swal.fire(" Updated", "Store location updated successfully!", "success");
+      } else {
+        // ➕ CREATE
+        await axios.post(`${baseURL}/api/pickup-locations`, payload);
+        Swal.fire(" Success", "Store location saved successfully!", "success");
+      }
+
+      // Reset all states
+      setEditId(null);
       setStoreName("");
       setAddress("");
       setSelectedCoords({ lat: "", lng: "" });
+      setShowModal(false);
       fetchStores();
     } catch (err) {
       console.error(err);
       Swal.fire("❌ Error", "Failed to save store location", "error");
     }
   };
+
 
   // ✅ Activate store (toggle ON)
   const handleToggleStore = async (storeId) => {
@@ -102,6 +126,8 @@ const StoreLocationForm = () => {
       Swal.fire("❌ Error", "Failed to activate store", "error");
     }
   };
+
+
 
   const handleDeleteStore = async (storeId) => {
     const result = await Swal.fire({
@@ -161,6 +187,15 @@ const StoreLocationForm = () => {
                   />
                   <div className="w-11 h-6 bg-gray-300 rounded-full peer peer-checked:bg-green-500 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
                 </label>
+                {/* ✏️ Edit Icon */}
+                <button
+                  onClick={() => handleEditStore(store)}
+                  className="text-blue-500 hover:text-blue-700 transition"
+                  title="Edit store"
+                >
+                  <FaEdit width={60} height={40}/>
+                </button>
+
 
                 {/* ✅ Delete Icon */}
                 <button
@@ -186,11 +221,18 @@ const StoreLocationForm = () => {
         <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-lg relative">
             <button
-              onClick={() => setShowModal(false)}
+              onClick={() => {
+                setShowModal(false);
+                setEditId(null);
+                setStoreName("");
+                setAddress("");
+                setSelectedCoords({ lat: "", lng: "" });
+              }}
               className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
             >
               ✕
             </button>
+
 
             <h2 className="text-lg font-semibold mb-4 text-gray-700">
               Add New Store
