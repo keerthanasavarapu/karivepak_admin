@@ -438,7 +438,7 @@ const ProductsTable = () => {
     }, [subCategories, formData.categoryId]);
 
     const filteredProducts = (products.data || []).filter(item =>
-        (item.productName || '').toLowerCase().includes((searchTerm || '').toLowerCase())
+        (item.name || '').toLowerCase().includes((searchTerm || '').toLowerCase())
     );
 
     const handleImageUpload = (e) => {

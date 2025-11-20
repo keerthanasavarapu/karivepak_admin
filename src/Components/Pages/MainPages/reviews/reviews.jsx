@@ -159,7 +159,7 @@ const filteredData = usersData.filter((t) =>
         <Fragment>
             <Row className="pb-2">
                 <Col md={12} className="d-flex justify-content-between align-items-center mb-3">
-                    <h4>Users</h4>
+                    <h4>Reviews</h4>
                     <div className="d-flex align-items-center">
                         <div className="mb-0 form-group position-relative search_outer d-flex align-items-center me-2">
                             <i className="fa fa-search"></i>
@@ -171,7 +171,7 @@ const filteredData = usersData.filter((t) =>
                                 placeholder="Search..."
                             />
                         </div>
-                        <Button
+                        {/* <Button
                             type="button"
                             className="btn btn-primary d-flex align-items-center"
                             style={{ minWidth: "136px" }}
@@ -185,7 +185,7 @@ const filteredData = usersData.filter((t) =>
                                 />
                             </svg>
                             <span className="ms-2">Export Excel</span>
-                        </Button>
+                        </Button> */}
                     </div>
                 </Col>
             </Row>
