@@ -9,7 +9,9 @@ import man from "../assets/images/dashboard/profile.png";
 import CustomizerContext from "../_helper/Customizer";
 import OtherWay from "./OtherWay";
 import { ToastContainer, toast } from "react-toastify";
-import CubaIcon from '../../src/assets/images/logo/bodegaa-logo.jpg';
+import CubaIcon from '../../src/assets/images/logo/Bodegaaa.png';
+
+
 import axios from 'axios'
 import { baseURL } from "../Services/api/baseURL";
 import { AuthContext, AuthProvider, useAuthContext } from "../context/Auth";

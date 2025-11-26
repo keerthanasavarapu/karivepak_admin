@@ -48,6 +48,8 @@ const SubCategoriesTable = () => {
     const [formData, setFormData] = useState({
         categoryId: '',
         subCategoryName: '',
+        image: null,
+        imagePreview: null,
     });
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -284,7 +286,9 @@ const SubCategoriesTable = () => {
                                 }));
                                 setFormData({
                                     categoryId: row.main_category._id,
-                                    subCategoryName: row.name
+                                    subCategoryName: row.name,
+                                    image:row.image,
+                                    imagePreview:row?.image
                                 });
                             }}
                             style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}
@@ -384,7 +388,7 @@ const SubCategoriesTable = () => {
             {/* Add Sub Category Modal */}
             <CommonModal
                 isOpen={modalState.isAddModalOpen}
-                name={modalState.selectedSubCategory ? "Update Sub Category" : "Add Sub Category"}
+                title={modalState.selectedSubCategory ? "Update Sub Category" : "Add Sub Category"}
                 toggler={resetModal}
                 className="store_modal"
                 size="md"

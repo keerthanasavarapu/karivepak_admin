@@ -268,9 +268,9 @@ const CategoryTable = () => {
         setEditData(row);
         setFormData({
             name: row.name,
-            status: row.status,
-            image: row.image || null,
-            imagePreview: row.image || null,
+            status: row?.status,
+            image: row?.image,
+            imagePreview: row?.image || null,
             metaTitle: row.metaTitle || "",
             metaDescription: row.metaDescription || ""
         });
@@ -398,9 +398,9 @@ const CategoryTable = () => {
                         <DropdownItem onClick={() => handleEditCategory(row)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
                             <FaPen className="mr-2" /> Edit
                         </DropdownItem>
-                        <DropdownItem onClick={() => handleAddMetaData(row)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                        {/* <DropdownItem onClick={() => handleAddMetaData(row)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
                             <FaPen className="mr-2" /> Add meta Data
-                        </DropdownItem>
+                        </DropdownItem> */}
                         {userRole && userRole.toLowerCase() === 'admin' && (
                             <DropdownItem onClick={() => openDeleteModal(row)} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
                                 <FaTrash className="mr-2" /> Delete

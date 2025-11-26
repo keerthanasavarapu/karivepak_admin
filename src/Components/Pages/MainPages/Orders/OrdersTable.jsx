@@ -396,11 +396,19 @@ const OrderTable = () => {
     {
       name: "Delivery Address",
       cell: (row) => (
-        <div style={{ maxWidth: "200px" }}>
-          <small>{row.address?.city || "N/A"}</small>
+        <div
+          style={{
+            maxWidth: "200px",
+            overflow: "hidden",
+            whiteSpace: "nowrap",
+            textOverflow: "ellipsis",
+          }}
+        >
+          <small>{row.address?.address || "N/A"}</small>
         </div>
       ),
-    },
+    }
+    ,
 
     {
       name: "Total Amount",

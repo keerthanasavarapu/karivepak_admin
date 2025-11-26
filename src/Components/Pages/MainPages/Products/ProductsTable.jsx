@@ -38,21 +38,21 @@ import VariantDetailsView from './VariantDetailsView';
 
 const ProductsTable = () => {
     // State Management
-      const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(false);
     const [products, setProducts] = useState({
         data: [],
     });
-      const [pagination, setPagination] = useState({
+    const [pagination, setPagination] = useState({
         page: 1,
         perPage: 10,
         totalRows: 0,
-      });
-    
+    });
+
     const [categories, setCategories] = useState([]);
     const [subCategories, setSubCategories] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [maincategory, setMainCategory] = useState([]);
-        const [selectedVariantForView, setSelectedVariantForView] = useState(null);
+    const [selectedVariantForView, setSelectedVariantForView] = useState(null);
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
     const [modal, setModal] = useState({
         isOpen: false,
@@ -60,7 +60,7 @@ const ProductsTable = () => {
         selectedProduct: null
     });
     console.log(modal.selectedProduct, "selected product")
-    
+
 
     const [formData, setFormData] = useState({
         productName: '',
@@ -87,21 +87,21 @@ const ProductsTable = () => {
         setLoading(true);
         try {
             const response = await axios.get(`${baseURL}/api/products/get-all-prodducts`, {
-            
+
                 headers: { Authorization: `Bearer ${token}` }
             });
             console.log(response, "response of products")
             setProducts({
                 data: response.data.products || [],
             });
-                    setPagination(prev => ({
-          ...prev,
-          totalRows: response?.data?.products?.length
-        }));
+            setPagination(prev => ({
+                ...prev,
+                totalRows: response?.data?.products?.length
+            }));
 
             return response.data;
         } catch (error) {
-       
+
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
@@ -152,7 +152,7 @@ const ProductsTable = () => {
         return () => clearTimeout(delaySearch);
     }, [searchTerm, pagination?.page]);
 
-     const openModal = (type, product = null) => {
+    const openModal = (type, product = null) => {
         setModal({ isOpen: true, type, selectedProduct: product });
 
         if (product) {
@@ -339,9 +339,9 @@ const ProductsTable = () => {
             name: 'Product Name',
             selector: row => row.name,
             cell: row => (
-                                <span
+                <span
                     className="text-inherit hover:text-blue-600 hover:underline hover:cursor-pointer"
-                    style={{cursor:"pointer"}}
+                    style={{ cursor: "pointer" }}
                     onClick={() => {
                         setSelectedVariantForView(row);
                         setIsViewModalOpen(true);
@@ -391,11 +391,22 @@ const ProductsTable = () => {
             )
         },
 
+
         {
             name: 'Created Date',
             selector: row => moment(row.createdAt).format('DD/MM/YYYY'),
             sortable: true,
             center: true,
+        },
+        {
+            name: 'Deleted',
+            selector: (row) => row.isActive,
+            cell: row => (
+                <div className={`p-2 rounded-lg text-semibold ${row?.isActive ? "bg-blue-500" : "bg-red-500"}`}>
+                    {row.isActive ? "Active" : "Deleted"}
+                </div>
+            ),
+            sortable: true
         },
         {
             name: "Actions",
@@ -462,7 +473,7 @@ const ProductsTable = () => {
         }));
     };
 
-    const [productDetails, setProductDetails] = useState([{ key: '', value: '' }, ]);
+    const [productDetails, setProductDetails] = useState([{ key: '', value: '' },]);
 
     const handleChange = (index, field, value) => {
         setProductDetails((prev) =>
@@ -470,7 +481,7 @@ const ProductsTable = () => {
                 i === index ? { ...detail, [field]: value } : detail
             )
         );
-    
+
 
     };
 
@@ -518,7 +529,7 @@ const ProductsTable = () => {
                 data={filteredProducts}
                 pagination
                 paginationPerPage={10}
-                 paginationRowsPerPageOptions={[10, 25, 50]}
+                paginationRowsPerPageOptions={[10, 25, 50]}
                 progressPending={loading}
                 progressComponent={<Loader />}
             />
@@ -840,7 +851,7 @@ const ProductsTable = () => {
                                     data-testid="confirm-delete-button"
 
                                 >
-                                    Confirm Delete  
+                                    Confirm Delete
                                 </button>
                             </Col>
                         </Row>
@@ -857,7 +868,7 @@ const ProductsTable = () => {
                 </Container>
             </Modal>
 
-                        <Modal
+            <Modal
                 isOpen={isViewModalOpen}
                 toggle={() => setIsViewModalOpen(false)}
                 size="lg"
