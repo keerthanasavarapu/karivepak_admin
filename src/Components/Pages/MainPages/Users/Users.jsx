@@ -19,6 +19,11 @@ const UserTable = () => {
     });
 
     const userCols = [
+                {
+            name: "UserId",
+            selector: (row) => row?.userId || "NA",
+            sortable: true,
+        },
         {
             name: "User Name",
             selector: (row) => row?.name,
@@ -102,6 +107,7 @@ const UserTable = () => {
 
     const filteredData = allUsers.filter(
         (t) =>
+            t?.userId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             t?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             t?.email?.toString().includes(searchQuery.toLowerCase()) ||
             t?.mobile_number?.toLowerCase().includes(searchQuery.toLowerCase())

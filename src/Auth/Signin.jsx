@@ -130,9 +130,9 @@ const Signin = ({ selected }) => {
                         {RememberPassword}
                       </Label>
                     </div>
-                    <a className="link" href="#javascript">
+                    {/* <a className="link" href="#javascript">
                       {ForgotPassword}
-                    </a>
+                    </a> */}
                     <button className="d-block w-100 mt-2 py-2.5 rounded-xl text-white bg-[#007F2D]" onClick={(e) => loginAuth(e)}>{SignIn}</button>
                   </div>
                   {/* <div className="flex justify-center items-center mt-2">

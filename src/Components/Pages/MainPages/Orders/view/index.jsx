@@ -74,6 +74,8 @@ function ViewOrder() {
         }
     }, [id]);
 
+    console.log(orderDetails, "orderdetails")
+
     return (
         <>
             <Container fluid>
@@ -124,7 +126,7 @@ function ViewOrder() {
                                         <tbody>
                                             <tr>
                                                 <th>Order ID :</th>
-                                                <td>{orderDetails?._id}</td>
+                                                <td>{orderDetails?.orderId}</td>
                                             </tr>
                                             <tr>
                                                 <th>Placed At :</th>
@@ -172,12 +174,21 @@ function ViewOrder() {
                                                 <td>₹ {orderDetails?.totals?.subtotal || 0}</td>
                                             </tr>
                                             <tr>
-                                                <th>Discount :</th>
-                                                <td>₹ {orderDetails?.totals?.discount || 0}</td>
+                                                <th>GST{orderDetails?.gstAmounts?.totalGSTPercent} :</th>
+                                                <td>₹ {orderDetails?.gstAmounts?.totalGST.toLocaleString() || 0}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Handling Fee :</th>
+                                                <td>₹ {orderDetails?.handlingFee.toLocaleString() || 0}</td>
+                                            </tr>
+
+                                            <tr>
+                                                <th>Small Cart Charges:</th>
+                                                <td>₹ {orderDetails?.smallCartFee.toLocaleString() || 0}</td>
                                             </tr>
                                             <tr>
                                                 <th>Delivery Charge :</th>
-                                                <td>₹ {orderDetails?.deliveryCharge || 0}</td>
+                                                <td>₹ {orderDetails?.deliveryCharge?.toLocaleString() || "fREE"}</td>
                                             </tr>
                                             <tr>
                                                 <th>
@@ -185,7 +196,7 @@ function ViewOrder() {
                                                 </th>
                                                 <td>
                                                     <span className="border-0 total_value">
-                                                        ₹ {Number(orderDetails?.grandTotal || 0).toFixed(2)}  
+                                                        ₹ {Number(orderDetails?.grandTotal || 0).toFixed(2)}
                                                     </span>
                                                 </td>
                                             </tr>
@@ -215,15 +226,12 @@ function ViewOrder() {
                                             <tr>
                                                 <th>Address :</th>
                                                 <td>
-                                                    {orderDetails?.address?.address},{" "}
-                                                    {orderDetails?.address?.city},{" "}
-                                                    {orderDetails?.address?.state} -{" "}
-                                                    {orderDetails?.address?.pincode}
+                                                    {orderDetails?.address?.flatNo},{""}
+                                                    {orderDetails?.address?.address}.{" "}
+                                                    {/* {orderDetails?.address?.city},{" "}
+                                                {orderDetails?.address?.state},{" "}
+                                                {orderDetails?.address?.pincode} */}
                                                 </td>
-                                            </tr>
-                                            <tr>
-                                                <th>Country :</th>
-                                                <td>{orderDetails?.address?.country}</td>
                                             </tr>
                                             <tr>
                                                 <th>Type :</th>
@@ -248,10 +256,10 @@ function ViewOrder() {
                                                 <th>Transaction ID :</th>
                                                 <td>{orderDetails?.payment?.transactionId}</td>
                                             </tr>
-                                            <tr>
-                                                <th>Payment ID :</th>
-                                                <td>{orderDetails?.paymentId}</td>
-                                            </tr>
+                                            {/* <tr>
+                                            <th>Payment ID :</th>
+                                            <td>{orderDetails?.paymentId}</td>
+                                        </tr> */}
                                             <tr>
                                                 <th>Razorpay Order ID :</th>
                                                 <td>{orderDetails?.paymentResponse?.orderId}</td>
@@ -265,7 +273,7 @@ function ViewOrder() {
                                             <tr>
                                                 <th>Payment Date :</th>
                                                 <td>
-                                                    {moment(orderDetails?.paymentDate).format("DD MMM YYYY, h:mm A")}
+                                                    {moment(orderDetails?.createdAt).format("DD MMM YYYY, h:mm A")}
                                                 </td>
                                             </tr>
                                         </tbody>
@@ -356,8 +364,18 @@ function ViewOrder() {
                                                                     </span>
                                                                 </div>
                                                             </td>
-                                                            <td>₹ {data?.price}</td>
-                                                            <td>₹ {data?.quantity * data?.price}</td>
+                                                            <td>
+                                                                {data?.discountPrice ? (
+                                                                    <>
+                                                                        <span className="line-through text-gray-500 mr-1">₹{data?.price}</span>
+                                                                        <span className="font-semibold">₹{data?.discountPrice}</span>
+                                                                    </>
+                                                                ) : (
+                                                                    <span>₹{data?.price}</span>
+                                                                )}
+                                                            </td>
+
+                                                            <td>₹ {orderDetails?.totals?.subtotal}</td>
                                                         </tr>
                                                     ))
                                                 ) : (
@@ -375,7 +393,7 @@ function ViewOrder() {
                         </Col>
                     </Row>
                 </div>
-            </Container>
+            </Container >
         </>
     );
 }

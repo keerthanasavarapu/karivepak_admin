@@ -575,12 +575,31 @@ const OrderTable = () => {
       cell: (row) => (
         <div>
           <div>Qty: {row.quantity}</div>
-          <span className="fw-bold">
-            ₹{row.price?.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
-          </span>
+
+          {/* If discountPrice exists show strike-through original price and discount price */}
+          {row?.discountPrice ? (
+            <div>
+              <span
+                className="fw-bold"
+                style={{ textDecoration: "line-through", marginRight: "8px" }}
+              >
+                ₹{row.price?.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+              </span>
+
+              <span className="fw-bold">
+                ₹{row?.discountPrice?.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+              </span>
+            </div>
+          ) : (
+            // If no discount show only normal price
+            <span className="fw-bold">
+              ₹{row.price?.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
+            </span>
+          )}
         </div>
       ),
-    },
+    }
+
 
 
 
@@ -626,6 +645,12 @@ const OrderTable = () => {
   };
 
 
+  const handleClearAll = ()=>{
+    setStartDate("");
+    setFormattedStartDate("");
+    setSearchTerm("")
+  }
+
 
   console.log(filteredOrders, "filteredorders");
 
@@ -664,7 +689,13 @@ const OrderTable = () => {
             </NavLink>
           </NavItem>
         </Nav>
+<div className="cursor-pointer bg-red-50 text-red-600 px-3 py-1 rounded-full text-sm font-medium hover:bg-red-100" onClick={()=>handleClearAll()}>
+  Clear All
+</div>
+
+
       </div>
+
       <Row className="pb-4">
         <div className="d-flex justify-content-between align-items-center">
           <H4>Order List</H4>

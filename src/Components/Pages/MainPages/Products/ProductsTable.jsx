@@ -32,7 +32,7 @@ import Swal from 'sweetalert2';
 import moment from 'moment';
 import { baseURL } from '../../../../Services/api/baseURL';
 import Loader from '../../../Loader/Loader';
-import { FaPen, FaTrash, FaTrashAlt } from 'react-icons/fa';
+import { FaEye, FaPen, FaTrash, FaTrashAlt } from 'react-icons/fa';
 import VariantDetailsView from './VariantDetailsView';
 
 
@@ -54,6 +54,12 @@ const ProductsTable = () => {
     const [maincategory, setMainCategory] = useState([]);
     const [selectedVariantForView, setSelectedVariantForView] = useState(null);
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+    // Tags modal state
+    const [isTagsModalOpen, setIsTagsModalOpen] = useState(false);
+    const [tagsModalProduct, setTagsModalProduct] = useState(null);
+    const [tagsList, setTagsList] = useState([]);
+    const [newTagInput, setNewTagInput] = useState('');
+    const [tagsSubmitting, setTagsSubmitting] = useState(false);
     const [modal, setModal] = useState({
         isOpen: false,
         type: 'add',
@@ -74,6 +80,7 @@ const ProductsTable = () => {
         image: [],
         imagePreview: [],
         price: '',
+        discountPrice: '',
         stock: ''
     });
     // Authentication
@@ -163,6 +170,7 @@ const ProductsTable = () => {
             setFormData({
                 productName: product?.name || '',
                 price: product?.price || '',
+                discountPrice: product?.discountPrice || '',
                 stock: product?.stock || '',
                 weight,
                 weightUnit,
@@ -196,6 +204,7 @@ const ProductsTable = () => {
         setFormData({
             productName: '',
             price: '',
+            discountPrice: '',
             stock: '',
             weight: '',
             weightUnit: '',
@@ -242,6 +251,7 @@ const ProductsTable = () => {
         data.append('category', formData.subCategoryId);
         data.append('description', formData.description.trim());
         data.append('price', formData.price);
+        data.append('discountPrice', formData.discountPrice);
         data.append('stock', formData.stock);
         data.append('weight', `${formData.weight}${formData.weightUnit}`);
         data.append('quantity', formData.quantity);
@@ -291,27 +301,86 @@ const ProductsTable = () => {
         handleSubmit(e);
     };
 
-    const handleDeleteProduct = async () => {
+const handleToggleStatus = async () => {
+    try {
+        setLoading(true);
+
+        const newStatus = !modal?.selectedProduct?.isActive;
+
+        await axios.put(
+            `${baseURL}/api/products/${modal.selectedProduct._id}/status`,
+            { isActive: newStatus },
+            {
+                headers: {
+                    Authorization: `Bearer ${token}` // pass token in header
+                }
+            }
+        );
+
+        Swal.fire({
+            icon: "success",
+            title: "Success",
+            text: `Product ${newStatus ? "activated" : "deactivated"} successfully`,
+            timer: 1500,
+            showConfirmButton: false
+        });
+
+        closeModal();
+        fetchProducts();
+    } catch (error) {
+        Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "Failed to update product status"
+        });
+    } finally {
+        setLoading(false);
+    }
+};
+
+
+
+    // Tags modal handlers
+    const openTagsModal = (product) => {
+        setTagsModalProduct(product);
+        setTagsList(Array.isArray(product?.tags) ? product.tags : []);
+        setNewTagInput('');
+        setIsTagsModalOpen(true);
+    };
+
+    const closeTagsModal = () => {
+        setIsTagsModalOpen(false);
+        setTagsModalProduct(null);
+        setTagsList([]);
+        setNewTagInput('');
+    };
+
+    const handleAddTagFromInput = () => {
+        const val = (newTagInput || '').trim();
+        if (!val) return;
+        setTagsList(prev => prev.includes(val) ? prev : [...prev, val]);
+        setNewTagInput('');
+    };
+
+    const handleRemoveTagAt = (index) => {
+        setTagsList(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const handleSubmitTags = async () => {
+        if (!tagsModalProduct) return;
+        setTagsSubmitting(true);
         try {
-            await axios.delete(`${baseURL}/api/products/${modal.selectedProduct._id}`, {
+            await axios.post(`${baseURL}/api/products/${tagsModalProduct._id}/tags`, { tags: tagsList }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            Swal.fire({
-                icon: 'success',
-                title: 'Product Deleted',
-                showConfirmButton: false,
-                timer: 1500
-            });
-
-            closeModal();
+            Swal.fire({ icon: 'success', title: 'Tags added', timer: 1400, showConfirmButton: false });
+            closeTagsModal();
             fetchProducts(pagination.page);
-        } catch (error) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Error',
-                text: error.response?.data?.message || 'Failed to delete product'
-            });
+        } catch (err) {
+            Swal.fire({ icon: 'error', title: 'Error', text: err.response?.data?.message || 'Failed to add tags' });
+        } finally {
+            setTagsSubmitting(false);
         }
     };
 
@@ -369,6 +438,12 @@ const ProductsTable = () => {
             center: true,
         },
         {
+            name: 'Discount Price (₹)',
+            selector: row => row.discountPrice,
+            sortable: true,
+            center: true,
+        },
+        {
             name: 'Stock',
             selector: row => row.stock,
             sortable: true,
@@ -403,7 +478,7 @@ const ProductsTable = () => {
             selector: (row) => row.isActive,
             cell: row => (
                 <div className={`p-2 rounded-lg text-semibold ${row?.isActive ? "bg-blue-500" : "bg-red-500"}`}>
-                    {row.isActive ? "Active" : "Deleted"}
+                    {row.isActive ? "Active" : "In Active"}
                 </div>
             ),
             sortable: true
@@ -422,6 +497,18 @@ const ProductsTable = () => {
                             </DropdownToggle>
                             <DropdownMenu>
                                 <DropdownItem
+                                    onClick={() => {
+                                        setSelectedVariantForView(row);
+                                        setIsViewModalOpen(true);
+                                    }}>
+                                    View
+                                    <FaEye />
+                                </DropdownItem>
+                                <DropdownItem onClick={() => openTagsModal(row)}>
+                                    Add Tags
+                                    <FaPen />
+                                </DropdownItem>
+                                <DropdownItem
                                     onClick={() => openModal('edit', row)}
                                 >
                                     Update
@@ -429,10 +516,11 @@ const ProductsTable = () => {
                                 </DropdownItem>
                                 <DropdownItem
                                     className="delete_item"
-                                    onClick={() => openModal('delete', row)}>
-                                    Delete
-                                    <FaTrashAlt />
+                                    onClick={() => openModal('toggleStatus', row)}
+                                >
+                                    {row?.isActive ? "Mark as Inactive" : "Mark as Active"}
                                 </DropdownItem>
+
                             </DropdownMenu>
                         </UncontrolledDropdown>
                     </div>
@@ -494,7 +582,7 @@ const ProductsTable = () => {
     };
 
 
-
+    console.log(formData, "formdataa")
 
     return (
         <div>
@@ -678,6 +766,26 @@ const ProductsTable = () => {
                                         required
                                     />
                                 </FormGroup>
+
+                            </Col>
+                            <Col md={6}>
+                                <FormGroup>
+                                    <Label>
+                                        Discount Price
+                                    </Label>
+                                    <Input
+                                        type="number"
+                                        value={formData.discountPrice}
+                                        onChange={(e) =>
+                                            setFormData((prev) => ({
+                                                ...prev,
+                                                discountPrice: e.target.value,
+                                            }))
+                                        }
+
+                                    />
+                                </FormGroup>
+
                             </Col>
                             <Col md={6}>
                                 <FormGroup>
@@ -817,20 +925,64 @@ const ProductsTable = () => {
                 </ModalBody>
             </Modal>
 
+            {/* Modal for Add Tags */}
+            <Modal
+                centered
+                isOpen={isTagsModalOpen}
+                toggle={closeTagsModal}
+                className="store_modal"
+                size="md"
+            >
+                <ModalHeader toggle={closeTagsModal}>Add Tags</ModalHeader>
+                <ModalBody>
+                    <div className="mb-2">
+                        <Label className="fw-bold">Product</Label>
+                        <div>{tagsModalProduct?.name || '—'}</div>
+                    </div>
+
+                    <div className="mb-3">
+                        <Label className="fw-bold">Tags</Label>
+                        <div className="d-flex flex-wrap gap-2 mb-2">
+                            {(!tagsList || tagsList.length === 0) && <div className="text-muted">No tags</div>}
+                            {(tagsList || []).map((t, i) => (
+                                <div key={i} className="badge bg-light text-dark d-inline-flex align-items-center" style={{ padding: '6px 8px' }}>
+                                    <span className="me-2">{t}</span>
+                                    <button type="button" className="btn btn-sm btn-link p-0" onClick={() => handleRemoveTagAt(i)}>×</button>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="d-flex">
+                            <Input type="text" value={newTagInput} onChange={(e) => setNewTagInput(e.target.value)} placeholder="Enter tag" />
+                            <Button type="button" className="ms-2" onClick={handleAddTagFromInput}>Add</Button>
+                        </div>
+                    </div>
+                </ModalBody>
+                <ModalFooter>
+                    <Button color="secondary" onClick={closeTagsModal}>Cancel</Button>
+                    <Button color="primary" onClick={handleSubmitTags} disabled={tagsSubmitting}>{tagsSubmitting ? 'Saving...' : 'Submit'}</Button>
+                </ModalFooter>
+            </Modal>
+
             {/* Modal for Delete Confirmation */}
-            <Modal centered isOpen={modal.isOpen && modal.type === 'delete'} toggle={closeModal}>
-                <ModalHeader toggle={closeModal}>Delete Product</ModalHeader>
+            <Modal centered isOpen={modal.isOpen && modal.type === 'toggleStatus'} toggle={closeModal}>
+                <ModalHeader toggle={closeModal}>
+                    {modal?.selectedProduct?.isActive ? "Mark as Inactive" : "Mark as Active"}
+                </ModalHeader>
 
                 <Container>
                     <div className="text-center mb-4">
+                        <h5>
+                            Are you sure you want to
+                            <span className="font-danger">
+                                {modal?.selectedProduct?.isActive ? " deactivate " : " activate "}
+                            </span>
+                            the product
+                            <span className="font-danger">{modal?.selectedProduct?.productName}</span>?
+                        </h5>
 
-                        <h5>Are you sure you want to delete this product <span className='font-danger'>{modal?.selectedProduct?.productName}</span>?</h5>
-                        <p className="text-muted">
-                            {/* {modal.selectedProduct.productName} */}
-                        </p>
-                        <p className="text-danger">
-                            This action cannot be undone.
-                        </p>
+                        <p className="text-danger">This action will update product status.</p>
+
                         <Row className="text-center">
                             <Col xs={6}>
                                 <Button
@@ -841,32 +993,23 @@ const ProductsTable = () => {
                                     Cancel
                                 </Button>
                             </Col>
+
                             <Col xs={6}>
                                 <button
                                     type="button"
                                     className="btn btn-red w-100"
-                                    onClick={handleDeleteProduct}
+                                    onClick={handleToggleStatus}
                                     style={{ backgroundColor: '#dc3545', color: '#fff' }}
                                     disabled={loading}
-                                    data-testid="confirm-delete-button"
-
                                 >
-                                    Confirm Delete
+                                    Confirm
                                 </button>
                             </Col>
                         </Row>
                     </div>
-
-                    {/* <ModalFooter>
-                    <Button color="danger" onClick={handleDeleteProduct}>
-                        Confirm Delete
-                    </Button>
-                    <Button color="secondary" onClick={closeModal}>
-                        Cancel
-                    </Button>
-                </ModalFooter> */}
                 </Container>
             </Modal>
+
 
             <Modal
                 isOpen={isViewModalOpen}
@@ -874,7 +1017,7 @@ const ProductsTable = () => {
                 size="lg"
             >
                 <ModalHeader toggle={() => setIsViewModalOpen(false)}>
-                    Variant Details
+                    Product Details
                 </ModalHeader>
                 <ModalBody>
                     {selectedVariantForView && (

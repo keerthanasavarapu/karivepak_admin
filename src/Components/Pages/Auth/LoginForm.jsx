@@ -38,9 +38,9 @@ const LoginForm = ({ logoClassMain }) => {
                     Remember password
                   </Label>
                 </div>
-                <Link className='link' to={`${process.env.PUBLIC_URL}/pages/authentication/forget-pwd`}>
+                {/* <Link className='link' to={`${process.env.PUBLIC_URL}/pages/authentication/forget-pwd`}>
                   Forgot password?
-                </Link>
+                </Link> */}
               </FormGroup>
               <FormGroup>
                 <Btn attrBtn={{ className: 'd-block w-100 mt-2', color: 'primary', type: 'submit' }}>Sign in</Btn>

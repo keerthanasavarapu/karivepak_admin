@@ -104,6 +104,7 @@ const VariantDetailsView = ({ variantId, onEdit, onDelete, token }) => {
     return <dd className="col-sm-12">No item details available</dd>;
   };
 
+  
 
 
 
@@ -112,20 +113,20 @@ const VariantDetailsView = ({ variantId, onEdit, onDelete, token }) => {
     <div>
       <Card className="mb-4">
         <CardBody>
-          <CardTitle tag="h4" className="mb-4">
-            Variant Details
+          {/* <CardTitle tag="h4" className="mb-4">
+            Product Details
             <div className="float-end">
-              {/* <Button
+              <Button
                 color="primary"
                 size="sm"
                 className="me-2"
                 onClick={() => onEdit(variant)}
               >
                 <FaEdit className="me-1" /> Edit
-              </Button> */}
+              </Button>
 
             </div>
-          </CardTitle>
+          </CardTitle> */}
 
           <Row>
             <Col md={6} className='mt-4'>
@@ -150,9 +151,12 @@ const VariantDetailsView = ({ variantId, onEdit, onDelete, token }) => {
                 <dt className="col-sm-4">Weight:</dt>
                 <dd className="col-sm-8">{variant.weight ? `${variant.weight}` : 'N/A'}</dd>
 
-                <dt className="col-sm-4">Price:</dt>
+                <dt className="col-sm-4">Original Price:</dt>
                 <dd className="col-sm-8">{variant.price ? ` ₹ ${variant.price}` : '0'}</dd>
-
+                <dt className="col-sm-4">Discount Price:</dt>
+                <dd className="col-sm-8">{variant.discountPrice ? ` ₹ ${variant.discountPrice}` : '0'}</dd>
+                <dt className="col-sm-4">Tags:</dt>
+                <dd className="col-sm-8">{variant.tags ? ` ${variant.tags}` : 'NA'}</dd>
               </dl>
             </Col>
 
@@ -226,7 +230,7 @@ const VariantDetailsView = ({ variantId, onEdit, onDelete, token }) => {
               <h5>Other Info</h5>
               <dl className="row">
 
-{/* 
+                {/* 
                 <dt className="col-sm-4">Meta Title:</dt>
                 <dd className="col-sm-8">{variant?.metaTitle}</dd>
 
@@ -239,7 +243,7 @@ const VariantDetailsView = ({ variantId, onEdit, onDelete, token }) => {
 
                 <dt className="col-sm-4">Updated At:</dt>
                 <dd className="col-sm-8">{moment(variant.updatedAt).format('DD/MM/YYYY HH:mm')}</dd>
-{/* 
+                {/* 
                 <dt className="col-sm-4">Approved:</dt>
                 <dd className="col-sm-8">
                   {variant.status != "rejected" ?

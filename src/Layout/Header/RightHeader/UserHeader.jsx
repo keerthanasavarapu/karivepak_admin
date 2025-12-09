@@ -28,12 +28,8 @@ const UserHeader = () => {
   }
 
   const Logout = () => {
-    localStorage.removeItem("profileURL");
-    localStorage.removeItem("token");
-    localStorage.removeItem("auth0_profile");
-    localStorage.removeItem("Name");
-    localStorage.setItem("authenticated", false);
-    history(`/login`);
+   localStorage.clear();
+     history("/login", { replace: true }); 
   };
 
   const UserMenuRedirect = (redirect) => {
