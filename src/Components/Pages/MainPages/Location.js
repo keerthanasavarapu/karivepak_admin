@@ -218,7 +218,7 @@ const StoreLocationForm = () => {
 
       {/* ✅ Add Store Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
+        <div className="fixed inset-0 bg-opacity-40 flex justify-center items-center z-50">
           <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-lg relative">
             <button
               onClick={() => {
@@ -275,7 +275,7 @@ const StoreLocationForm = () => {
 
               <button
                 type="submit"
-                className="w-full bg-blue-600 text-white font-medium py-2 rounded-lg hover:bg-blue-700 transition-all"
+                className="w-full bg-green-600 text-white font-medium py-2 rounded-lg hover:bg-blue-700 transition-all"
               >
                 Save Store
               </button>

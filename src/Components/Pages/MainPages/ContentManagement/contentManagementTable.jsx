@@ -201,87 +201,102 @@ function ContentManagementTable() {
         setIsPreview(!isPreview);
     };
 
-    const formik = useFormik({
-        initialValues: {
-            device_type: "",
-            banner_type: "",
-            title: "",
-            image: "",
-            content: ""
-        },
-        validationSchema: Yup.object({
-            device_type: Yup.string().required('Device Type is required'),
-            banner_type: Yup.string().required('Banner Type is required'),
-            // email: Yup.string()('Invalid email').required('Email is required'),
-        }),
-        onSubmit: async (values) => {
-            setLoading(true);
-            // src && src !== null && onCropComplete(crop);
-            const token = await JSON.parse(localStorage.getItem("token"));
-            try {
-                const formData = new FormData();
-                values.device_type && formData.append('device_type', values.device_type);
-                values.banner_type && formData.append('banner_type', values.banner_type);
+const formik = useFormik({
+    initialValues: {
+        device_type: "",
+        banner_type: "",
+        title: "",
+        image: "",
+        content: ""
+    },
 
-                if (files) {
-                    console.log("files", files);
-                    files.forEach((image, index) => {
-                        formData.append(`image_[${index}]`, image);
-                    })
-                }
+    validationSchema: Yup.object({
+        device_type: Yup.string().required('Device Type is required'),
+        banner_type: Yup.string().required('Banner Type is required'),
 
-                // files.length > 0 &&
-                //     files.forEach((image, index) => {
-                //         formData.append(`identityImages[${index}]`, image);
-                //     });
+        // ⭐ IMAGE VALIDATION ADDED HERE
+        image: Yup.mixed().test(
+            "required-image",
+            "Image is required",
+            function () {
+                const { files, id } = this.options.context;
 
-                let response;
+                // If editing AND user didn't upload new file → allow
+                if (id && (!files || files.length === 0)) return true;
 
-                if (id) {
+                // If creating → at least one image required
+                return files && files.length > 0;
+            }
+        ),
+    }),
 
-                    response = await axios.patch(`${baseURL}/api/banner/${id}/status`,
-                        formData,
-                        {
-                            headers: {
-                                Authorization: `${token}`,
-                                "Content-Type": "multipart/form-data",
-                            }
-                        })
-                }
-                else {
+    // ⭐ REQUIRED to pass files and id into Yup test
+    context: { files, id },
 
-                    response = await axios.post(`${baseURL}/api/banner`,
+    onSubmit: async (values) => {
+        setLoading(true);
+        const token = await JSON.parse(localStorage.getItem("token"));
 
-                        formData,
-                        {
-                            headers: {
-                                Authorization: `${token}`,
-                                "Content-Type": "multipart/form-data",
-                            }
-                        });
-                }
+        try {
+            const formData = new FormData();
+            values.device_type && formData.append('device_type', values.device_type);
+            values.banner_type && formData.append('banner_type', values.banner_type);
 
-                if (response?.data?.success) {
-                    setLoading(false)
-                    formik.resetForm();
-                    toggleModal();
-                    getData();
-                    Swal.fire({
-                        title: response?.data?.message,
-                        icon: "success",
-                        confirmButtonColor: "#d3178a",
-                    });
-                }
-            } catch (error) {
+            if (files) {
+                console.log("files", files);
+                files.forEach((image, index) => {
+                    formData.append(`image_[${index}]`, image);
+                });
+            }
+
+            let response;
+
+            if (id) {
+                response = await axios.patch(
+                    `${baseURL}/api/banner/${id}/status`,
+                    formData,
+                    {
+                        headers: {
+                            Authorization: `${token}`,
+                            "Content-Type": "multipart/form-data",
+                        }
+                    }
+                );
+            } else {
+                response = await axios.post(
+                    `${baseURL}/api/banner`,
+                    formData,
+                    {
+                        headers: {
+                            Authorization: `${token}`,
+                            "Content-Type": "multipart/form-data",
+                        }
+                    }
+                );
+            }
+
+            if (response?.data?.success) {
                 setLoading(false);
+                formik.resetForm();
+                toggleModal();
+                getData();
                 Swal.fire({
-                    title: error?.response?.data?.message,
-                    icon: "error",
+                    title: response?.data?.message,
+                    icon: "success",
                     confirmButtonColor: "#d3178a",
                 });
             }
-        },
-    });
+        } catch (error) {
+            setLoading(false);
+            Swal.fire({
+                title: error?.response?.data?.message,
+                icon: "error",
+                confirmButtonColor: "#d3178a",
+            });
+        }
+    },
+});
+
 
     const handlePageChange = (page) => {
         setCurrentPage(page);
@@ -751,8 +766,8 @@ function ContentManagementTable() {
                                             </button>
                                         </Form>
                                     </CardBody>
-                                    {formik.touched.identityImages && formik.errors.identityImages ? (
-                                        <span className="error text-danger">{formik.errors.identityImages}</span>
+                                    {formik.touched.image && formik.errors.image ? (
+                                        <span className="error text-danger">{formik.errors.image}</span>
                                     ) : (
                                         ""
                                     )}

@@ -12,7 +12,7 @@ const Footer = () => {
             <Col md="12" className="footer-copyright text-center">
               <P attrPara={{ className: "mb-0 flex justify-center items-center space-x-8" }}>
                 <img src="https://www.codefacts.com/assets/images/Code%20Facts%20Logo%202.png" alt="" width={100} height={50} style={{ marginRight: '10px' }} />
-                Developed By Codefacts It Solutions</P>
+                Developed By Codefacts IT Solutions</P>
             </Col>
           </Row>
         </Container>

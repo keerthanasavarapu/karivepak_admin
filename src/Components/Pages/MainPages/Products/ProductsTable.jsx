@@ -235,14 +235,14 @@ const ProductsTable = () => {
         const flatDetails = productDetails
             .filter(detail => detail.key?.trim() && detail.value?.trim());
 
-        if (flatDetails.length === 0) {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Missing Product Details',
-                text: 'Please add at least one product detail (key + value).'
-            });
-            return;
-        }
+        // if (flatDetails.length === 0) {
+        //     Swal.fire({
+        //         icon: 'warning',
+        //         title: 'Missing Product Details',
+        //         text: 'Please add at least one product detail (key + value).'
+        //     });
+        //     return;
+        // }
 
         // ✅ Prepare FormData
         const data = new FormData();
@@ -301,42 +301,42 @@ const ProductsTable = () => {
         handleSubmit(e);
     };
 
-const handleToggleStatus = async () => {
-    try {
-        setLoading(true);
+    const handleToggleStatus = async () => {
+        try {
+            setLoading(true);
 
-        const newStatus = !modal?.selectedProduct?.isActive;
+            const newStatus = !modal?.selectedProduct?.isActive;
 
-        await axios.put(
-            `${baseURL}/api/products/${modal.selectedProduct._id}/status`,
-            { isActive: newStatus },
-            {
-                headers: {
-                    Authorization: `Bearer ${token}` // pass token in header
+            await axios.put(
+                `${baseURL}/api/products/${modal.selectedProduct._id}/status`,
+                { isActive: newStatus },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}` // pass token in header
+                    }
                 }
-            }
-        );
+            );
 
-        Swal.fire({
-            icon: "success",
-            title: "Success",
-            text: `Product ${newStatus ? "activated" : "deactivated"} successfully`,
-            timer: 1500,
-            showConfirmButton: false
-        });
+            Swal.fire({
+                icon: "success",
+                title: "Success",
+                text: `Product ${newStatus ? "activated" : "deactivated"} successfully`,
+                timer: 1500,
+                showConfirmButton: false
+            });
 
-        closeModal();
-        fetchProducts();
-    } catch (error) {
-        Swal.fire({
-            icon: "error",
-            title: "Error",
-            text: "Failed to update product status"
-        });
-    } finally {
-        setLoading(false);
-    }
-};
+            closeModal();
+            fetchProducts();
+        } catch (error) {
+            Swal.fire({
+                icon: "error",
+                title: "Error",
+                text: "Failed to update product status"
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
 
 
 
@@ -540,26 +540,88 @@ const handleToggleStatus = async () => {
         (item.name || '').toLowerCase().includes((searchTerm || '').toLowerCase())
     );
 
-    const handleImageUpload = (e) => {
-        const files = Array.from(e.target.files);
+    const handleImageUpload = async (e) => {
+        const newFiles = Array.from(e.target.files);
 
-        if (files.length > 5) {
+        const existingCount = formData.image?.length || 0;
+        const totalCount = existingCount + newFiles.length;
+
+        // 🔥 Validate total count
+        if (totalCount > 5) {
             Swal.fire({
-                icon: 'warning',
-                title: 'Limit Exceeded',
-                text: 'You can upload a maximum of 5 images.',
+                icon: "warning",
+                title: "Limit Exceeded",
+                text: `You can upload max 5 images.
+Current images: ${existingCount}
+Trying to upload: ${newFiles.length}`,
             });
             return;
         }
 
-        const previews = files.map((file) => URL.createObjectURL(file));
+        // Image compression function
+        const compressImage = (file) => {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.src = event.target.result;
+
+                    img.onload = () => {
+                        const canvas = document.createElement("canvas");
+                        const ctx = canvas.getContext("2d");
+
+                        const MAX_WIDTH = 1000;
+                        const scaleSize = MAX_WIDTH / img.width;
+
+                        canvas.width = MAX_WIDTH;
+                        canvas.height = img.height * scaleSize;
+
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                        canvas.toBlob(
+                            (blob) => {
+                                resolve(new File([blob], file.name, { type: file.type }));
+                            },
+                            file.type,
+                            0.6
+                        );
+                    };
+                };
+            });
+        };
+
+        // Compress all new images
+        const compressedFiles = await Promise.all(newFiles.map((file) => compressImage(file)));
+
+        const newPreviews = compressedFiles.map((file) => URL.createObjectURL(file));
 
         setFormData((prev) => ({
             ...prev,
-            image: files,
-            imagePreview: previews,
+            image: [...prev.image, ...compressedFiles],
+            imagePreview: [...prev.imagePreview, ...newPreviews],
         }));
     };
+
+
+    const handleRemoveImage = (index) => {
+        setFormData(prev => {
+            const updatedImages = [...prev.image];
+            const updatedPreviews = [...prev.imagePreview];
+
+            updatedImages.splice(index, 1);
+            updatedPreviews.splice(index, 1);
+
+            return {
+                ...prev,
+                image: updatedImages,
+                imagePreview: updatedPreviews
+            };
+        });
+    };
+
+
 
     const [productDetails, setProductDetails] = useState([{ key: '', value: '' },]);
 
@@ -718,6 +780,7 @@ const handleToggleStatus = async () => {
                                 <Input
                                     type="number"
                                     min="0"
+                                    step="any"
                                     placeholder="Enter weight"
                                     value={formData.weight}
                                     onChange={(e) =>
@@ -832,7 +895,7 @@ const handleToggleStatus = async () => {
                             <Row className="align-items-center mb-3">
                                 <Col md={6}>
                                     <Label className="fw-bold mb-0">
-                                        Product Details <span className="text-danger">*</span>
+                                        Product Details 
                                     </Label>
                                 </Col>
                                 <Col md={6} className="text-end">
@@ -857,7 +920,7 @@ const handleToggleStatus = async () => {
                                             placeholder="Enter Title"
                                             value={detail.key}
                                             onChange={(e) => handleChange(index, 'key', e.target.value)}
-                                            required
+                                         
                                         />
                                     </div>
 
@@ -868,7 +931,7 @@ const handleToggleStatus = async () => {
                                             placeholder="Enter Description"
                                             value={detail.value}
                                             onChange={(e) => handleChange(index, 'value', e.target.value)}
-                                            required
+                                           
                                         />
                                     </div>
 
@@ -885,8 +948,6 @@ const handleToggleStatus = async () => {
                                 </div>
 
                             ))}
-
-
                         </FormGroup>
 
 
@@ -905,15 +966,39 @@ const handleToggleStatus = async () => {
                             {formData.imagePreview && formData.imagePreview.length > 0 && (
                                 <div className="mt-2 d-flex flex-wrap gap-2">
                                     {formData.imagePreview.map((preview, index) => (
-                                        <img
-                                            key={index}
-                                            src={preview}
-                                            alt={`Preview ${index}`}
-                                            style={{ maxWidth: '120px', borderRadius: '8px' }}
-                                        />
+                                        <div key={index} style={{ position: "relative" }}>
+                                            <img
+                                                src={preview}
+                                                alt={`Preview ${index}`}
+                                                style={{ maxWidth: "120px", borderRadius: "8px" }}
+                                            />
+
+                                            {/* ❌ Remove Button */}
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemoveImage(index)}
+                                                style={{
+                                                    position: "absolute",
+                                                    top: "-5px",
+                                                    right: "-5px",
+                                                    background: "red",
+                                                    color: "white",
+                                                    border: "none",
+                                                    borderRadius: "50%",
+                                                    width: "22px",
+                                                    height: "22px",
+                                                    cursor: "pointer",
+                                                    fontSize: "14px",
+                                                    lineHeight: "22px"
+                                                }}
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
                                     ))}
                                 </div>
                             )}
+
                         </FormGroup>
 
                         <Row className="text-center p-2">

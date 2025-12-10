@@ -29,6 +29,7 @@ import DatePicker from 'react-datepicker';
 import { useNavigate } from "react-router";
 import { format } from 'date-fns';
 import 'react-datepicker/dist/react-datepicker.css';
+import "./orders.css"
 
 
 const OrderTable = () => {

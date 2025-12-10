@@ -1,0 +1,23 @@
+/* Add gap between month and its dropdown arrow */
+.react-datepicker__month-dropdown-container {
+  margin-right: 8px; /* Adjust as needed */
+}
+
+/* Add gap between year and its dropdown arrow */
+.react-datepicker__year-dropdown-container {
+  margin-left: 8px; /* Adjust as needed */
+}
+
+/* Extra: space inside the header for better alignment */
+.react-datepicker__header__dropdown {
+  display: flex !important;
+  gap: 10px !important;  /* Controls space between month & year containers */
+  align-items: center;
+}
+.react-datepicker__month-select{
+  padding:0.375rem 1.75rem
+}
+.react-datepicker__year-select{
+    padding:0.375rem 1.75rem
+
+}

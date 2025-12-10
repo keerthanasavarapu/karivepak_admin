@@ -100,12 +100,12 @@ function ViewOrder() {
                         </Col>
                         <Col xs="6">
                             <div className="d-flex justify-content-end">
-                                <Button
+                                {/* <Button
                                     className="filter_btn"
                                     onClick={() => downloadInvoice(id)}
                                 >
                                     <FaDownload color="#d422ad" />
-                                </Button>
+                                </Button> */}
                             </div>
                         </Col>
                     </Row>
