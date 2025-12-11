@@ -67,6 +67,7 @@ const ProductsTable = () => {
     });
     console.log(modal.selectedProduct, "selected product")
 
+    const [newTag, setNewTag] = useState("");
 
     const [formData, setFormData] = useState({
         productName: '',
@@ -79,6 +80,7 @@ const ProductsTable = () => {
         productDetails: [],
         image: [],
         imagePreview: [],
+        tags: [],
         price: '',
         discountPrice: '',
         stock: ''
@@ -180,6 +182,7 @@ const ProductsTable = () => {
                 subCategoryId: product?.category?._id || '',
                 image: [],
                 imagePreview: Array.isArray(product?.image) ? product.image : [],
+                tags: product.tags || []
             });
 
             if (product?.itemDetails) {
@@ -213,7 +216,8 @@ const ProductsTable = () => {
             categoryId: '',
             subCategoryId: '',
             image: [],
-            imagePreview: []
+            imagePreview: [],
+            tags: []
         });
         setProductDetails([{ id: Date.now(), details: [{ id: Date.now() + 1, key: '', value: '' }] }]);
     };
@@ -256,6 +260,7 @@ const ProductsTable = () => {
         data.append('weight', `${formData.weight}${formData.weightUnit}`);
         data.append('quantity', formData.quantity);
         data.append('itemDetails', JSON.stringify(flatDetails));
+        data.append('tags', JSON.stringify(formData.tags));
 
         // ✅ Add images to FormData
         formData.image.forEach((file) => {
@@ -868,6 +873,61 @@ Trying to upload: ${newFiles.length}`,
                                     />
                                 </FormGroup>
                             </Col>
+                            <Col>
+                                <FormGroup>
+                                    <Label>
+                                        Tags
+                                    </Label>
+
+
+
+                                    <div className="d-flex">
+                                        <Input
+                                            type="text"
+                                            placeholder="Enter tag"
+                                            value={newTag}
+                                            onChange={(e) => setNewTag(e.target.value)}
+                                        />
+                                        <Button
+                                            type="button"
+                                            className="ms-2"
+                                            onClick={() => {
+                                                if (!newTag.trim()) return;
+                                                setFormData(prev => ({
+                                                    ...prev,
+                                                    tags: [...prev.tags, newTag.trim()]
+                                                }));
+                                                setNewTag("");
+                                            }}
+                                        >
+                                            Add
+                                        </Button>
+                                    </div>
+                                    <div className="d-flex gap-2 mt-4 flex-wrap">
+                                        {formData.tags?.map((tag, index) => (
+                                            <div
+                                                key={index}
+                                                className="badge bg-light text-dark d-inline-flex align-items-center"
+                                                style={{ padding: "6px 8px" }}
+                                            >
+                                                <span className="me-2">{tag}</span>
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-sm btn-link p-0"
+                                                    onClick={() =>
+                                                        setFormData(prev => ({
+                                                            ...prev,
+                                                            tags: prev.tags.filter((_, i) => i !== index)
+                                                        }))
+                                                    }
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </FormGroup>
+                            </Col>
                         </Row>
 
                         <FormGroup>
@@ -895,7 +955,7 @@ Trying to upload: ${newFiles.length}`,
                             <Row className="align-items-center mb-3">
                                 <Col md={6}>
                                     <Label className="fw-bold mb-0">
-                                        Product Details 
+                                        Product Details
                                     </Label>
                                 </Col>
                                 <Col md={6} className="text-end">
@@ -920,7 +980,7 @@ Trying to upload: ${newFiles.length}`,
                                             placeholder="Enter Title"
                                             value={detail.key}
                                             onChange={(e) => handleChange(index, 'key', e.target.value)}
-                                         
+
                                         />
                                     </div>
 
@@ -931,7 +991,7 @@ Trying to upload: ${newFiles.length}`,
                                             placeholder="Enter Description"
                                             value={detail.value}
                                             onChange={(e) => handleChange(index, 'value', e.target.value)}
-                                           
+
                                         />
                                     </div>
 
