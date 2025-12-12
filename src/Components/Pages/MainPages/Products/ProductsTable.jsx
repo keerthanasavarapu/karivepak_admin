@@ -292,6 +292,16 @@ const ProductsTable = () => {
             fetchProducts(pagination.page);
         } catch (error) {
             console.error('Submit Error:', error);
+
+            if (error.response?.status === 413) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'File Too Large',
+                    text: 'Image size must be less than 5MB.'
+                });
+                return;
+            }
+
             Swal.fire({
                 icon: 'error',
                 title: 'Error',
