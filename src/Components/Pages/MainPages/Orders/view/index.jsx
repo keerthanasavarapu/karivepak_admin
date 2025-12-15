@@ -7,18 +7,33 @@ import {
     Col,
     Container,
     Row,
+    Form,
+    FormGroup,
+    Label,
+    Media,
+    Input,
     Table,
 } from "reactstrap";
 import { FaDownload } from "react-icons/fa";
 import dummyImg from "../../../../../../src/assets/images/product/1.png";
+import CommonModal from "../../../../UiKits/Modals/common/modal";
+
 import { useParams } from "react-router";
 import axios from "axios";
 import { baseURL, orderURL } from "../../../../../Services/api/baseURL";
 import moment from "moment";
+import { Truck } from "react-feather";
+import Swal from "sweetalert2";
 
 function ViewOrder() {
     const { id } = useParams();
     const [orderDetails, setOrderDetails] = useState();
+    const [showDeliveryModal, setShowDeliveryModal] = useState(false);
+    const [selectedSubOrder, setSelectedSubOrder] = useState(null);
+    const [selectedDeliveryPerson, setSelectedDeliveryPerson] = useState("");
+    const [deliveryPersons, setDeliveryPersons] = useState([]);
+        const token =  JSON.parse(localStorage.getItem("token"));
+
 
     const getOrderDetails = async () => {
         const token = await JSON.parse(localStorage.getItem("token"));
@@ -35,6 +50,66 @@ function ViewOrder() {
             console.error(err);
         }
     };
+
+    const fetchDeliveryPersons = async () => {
+        const token = await JSON.parse(localStorage.getItem("token"));
+
+        try {
+            const response = await axios.get(
+                `${baseURL}/api/auth/delivery-persons`,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+            setDeliveryPersons(response.data.deliveryPersons);
+        } catch (error) {
+            console.error("Error fetching delivery persons:", error);
+        }
+    };
+
+    useEffect(() => {
+
+        fetchDeliveryPersons();
+    }, []);
+
+
+      const handleDeliveryAssign = async () => {
+    try {
+      console.log(selectedSubOrder._id, selectedDeliveryPerson, "gffffffffffffffffffffffffffff");
+      const response = await axios.post(
+        `${baseURL}/api/delivery/assign/${selectedSubOrder._id}`,
+        {
+          partnerId: selectedDeliveryPerson,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+
+      );
+      console.log(response, "resdxfshxsxs")
+
+      Swal.fire({
+        title: "Delivery Assigned!",
+        icon: "success",
+        confirmButtonColor: "#fc2c54",
+      });
+
+      setShowDeliveryModal(false);
+     getOrderDetails()
+    } catch (error) {
+      console.log(error, "error in assign")
+      Swal.fire({
+        title: "Error",
+        text: error.response?.data?.message || "Failed to assign delivery",
+        icon: "error",
+        confirmButtonColor: "#fc2c54",
+      });
+    }
+  };
 
     const downloadInvoice = async (orderId) => {
         try {
@@ -100,16 +175,56 @@ function ViewOrder() {
                         </Col>
                         <Col xs="6">
                             <div className="d-flex justify-content-end">
-                                {/* <Button
+                                <Button
                                     className="filter_btn"
-                                    onClick={() => downloadInvoice(id)}
+                                    onClick={() => {
+                                        setSelectedSubOrder(orderDetails);
+                                        setShowDeliveryModal(true);
+                                    }}
                                 >
-                                    <FaDownload color="#d422ad" />
-                                </Button> */}
+                                    <Truck color="#007F2D" />
+                                </Button>
                             </div>
                         </Col>
                     </Row>
                 </div>
+                <CommonModal
+                    isOpen={showDeliveryModal}
+                    title="Assign Delivery Person"
+                    toggler={() => setShowDeliveryModal(false)}
+                    size="md"
+                >
+                    <Container>
+                        <Form>
+                            <Col xxl={12}>
+                                <FormGroup>
+                                    <Label>Select Delivery Person</Label>
+                                    <Input
+                                        type="select"
+                                        value={selectedDeliveryPerson}
+                                        onChange={(e) => setSelectedDeliveryPerson(e.target.value)}
+                                    >
+                                        <option value="">Select...</option>
+                                        {deliveryPersons.map((person) => (
+                                            <option key={person._id} value={person._id}>
+                                                {person.name}
+                                            </option>
+                                        ))}
+                                    </Input>
+                                </FormGroup>
+                                <Row className="text-center">
+                                    <Button
+                                        color="primary"
+                                        onClick={handleDeliveryAssign}
+                                        disabled={!selectedDeliveryPerson}
+                                    >
+                                        Assign Delivery
+                                    </Button>
+                                </Row>
+                            </Col>
+                        </Form>
+                    </Container>
+                </CommonModal>
             </Container>
 
             <Container fluid>
@@ -217,17 +332,17 @@ function ViewOrder() {
                                         <tbody>
                                             <tr>
                                                 <th>Name :</th>
-                                                <td>{orderDetails?.address?.name}</td>
+                                                <td>{orderDetails?.deliveryDetails?.deliveryAddressSnapshot?.name}</td>
                                             </tr>
                                             <tr>
                                                 <th>Mobile :</th>
-                                                <td>{orderDetails?.address?.mobile_number}</td>
+                                                <td>{orderDetails?.deliveryDetails?.deliveryAddressSnapshot?.mobile_number}</td>
                                             </tr>
                                             <tr>
                                                 <th>Address :</th>
                                                 <td>
-                                                    {orderDetails?.address?.flatNo},{""}
-                                                    {orderDetails?.address?.address}.{" "}
+                                                    {orderDetails?.deliveryDetails?.deliveryAddressSnapshot?.flatNo},{""}
+                                                    {orderDetails?.deliveryDetails?.deliveryAddressSnapshot?.address}.{" "}
                                                     {/* {orderDetails?.address?.city},{" "}
                                                 {orderDetails?.address?.state},{" "}
                                                 {orderDetails?.address?.pincode} */}
@@ -235,7 +350,7 @@ function ViewOrder() {
                                             </tr>
                                             <tr>
                                                 <th>Type :</th>
-                                                <td>{orderDetails?.address?.type}</td>
+                                                <td>{orderDetails?.deliveryDetails?.deliveryAddressSnapshot?.type}</td>
                                             </tr>
                                         </tbody>
                                     </Table>

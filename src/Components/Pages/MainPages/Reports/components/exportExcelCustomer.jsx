@@ -10,13 +10,11 @@ const exportExcelCustomer = (filteredData) => {
     }
 
     const formattedData = filteredData.map(item => ({
-        "user Id": item?._id ?? "NA",
-        Name:item?.name ?? "NA",
-        Online:item?.online ? "Online" :"Offline",
-        Email: item?.email ?? "NA",
-        Mobile:item?.mobile_number ?? "NA",
-
-
+        "DELIVERY PERSON ID": item?._id ?? "NA",
+        "NAME":item?.name ?? "NA",
+        "ONLINE":item?.online ? "Online" :"Offline",
+        "EMAIL": item?.email ?? "NA",
+        "MOBILE":item?.mobile_number ?? "NA",
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(formattedData)

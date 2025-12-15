@@ -79,7 +79,7 @@ const userCols = [
         name: "Rating",
         selector: (row) => row?.rating || "NA",
         sortable: true,
-        width: "90px",
+      
     },
 
     {
@@ -118,8 +118,8 @@ const userCols = [
             });
 console.log("Reviews response", response?.data);
             if (response.status === 200) {
-                const users = response.data;
-                const totalUsers = response.data.length || 0;
+                const users = response?.data;
+                const totalUsers = response?.data?.length || 0;
 
                 setUsersData(users);
                 setPagination((prev) => ({

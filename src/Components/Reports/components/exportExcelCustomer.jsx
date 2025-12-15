@@ -10,9 +10,9 @@ const exportExcelCustomer = (filteredData) => {
     }
 
     const formattedData = filteredData.map(item => ({
-        "user Id": item?.userId ?? "NA",
-        Email: item?.email ?? "NA",
-        Mobile:item?.mobile_number ?? "NA",
+        "USER ID": item?.userId ?? "NA",
+        "EMAIL": item?.email ?? "NA",
+        "MOBILE":item?.mobile_number ?? "NA",
 
     }));
 

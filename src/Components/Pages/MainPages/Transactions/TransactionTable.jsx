@@ -128,7 +128,7 @@ console.log(res?.data?.data,"response of transa")
       selector: (row) => row?.userId?.name || "N/A",
       cell: (row) => (
         <Media className="d-flex">
-          <Image
+          {/* <Image
             attrImage={{
               className: " img-30 me-3",
               src: row?.userId?.profilePic
@@ -136,7 +136,7 @@ console.log(res?.data?.data,"response of transa")
                 : dummyImg,
               alt: "User",
             }}
-          />
+          /> */}
           <Media body className="align-self-center">
             {row?.userId?.name || "N/A"}
           </Media>

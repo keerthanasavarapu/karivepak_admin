@@ -471,7 +471,7 @@ const SubCategoriesTable = () => {
                 <Container>
                     <div className="text-center mb-4">
 
-                        <h5>Are you sure you want to delete this sub-category  {modalState?.selectedSubCategory?.subCategoryName}?</h5>
+                        <h4>Are you sure you want to delete this sub-category  {modalState?.selectedSubCategory?.subCategoryName}?</h4>
                         <p className="text-muted">
                             {/* {modalState.selectedSubCategory?.subCategoryName} */}
                         </p>

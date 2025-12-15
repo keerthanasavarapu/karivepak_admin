@@ -593,7 +593,7 @@ const CategoryTable = () => {
                 <Container>
                     <div className="text-center mb-4">
 
-                        <h5>Are you sure you want to delete this category {selectedCategory?.categoryName}?</h5>
+                        <h4>Are you sure you want to delete this category {selectedCategory?.categoryName}?</h4>
                         <p className="text-muted">
                             {/* {selectedCategory?.categoryName} */}
                         </p>

@@ -1127,14 +1127,14 @@ Trying to upload: ${newFiles.length}`,
 
                 <Container>
                     <div className="text-center mb-4">
-                        <h5>
+                        <h4>
                             Are you sure you want to
                             <span className="font-danger">
                                 {modal?.selectedProduct?.isActive ? " deactivate " : " activate "}
                             </span>
                             the product
                             <span className="font-danger">{modal?.selectedProduct?.productName}</span>?
-                        </h5>
+                        </h4>
 
                         <p className="text-danger">This action will update product status.</p>
 

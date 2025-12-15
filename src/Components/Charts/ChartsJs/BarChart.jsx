@@ -155,6 +155,9 @@ const BarChartClass = () => {
                                                 text: moment(startDate).format("MMM YYYY"),
                                                 padding: { top: 20 },
                                             },
+                                            datalabels: {
+                                                display: false,
+                                            },
                                         },
                                         maintainAspectRatio: false,
                                         responsive: true,

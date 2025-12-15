@@ -405,7 +405,7 @@ const OrderTable = () => {
             textOverflow: "ellipsis",
           }}
         >
-          <small>{row.address?.address || "N/A"}</small>
+          <small>{row.deliveryDetails?.deliveryAddressSnapshot?.address || "N/A"}</small>
         </div>
       ),
     }
