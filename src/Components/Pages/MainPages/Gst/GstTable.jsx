@@ -98,7 +98,7 @@ const GstTable = () => {
         <Fragment>
             <Row xxl={12} className='pb-2'>
                 <Col md={12} className='d-flex justify-content-between align-items-center mb-3'>
-                    <h4>Gst</h4>
+                    <h4>GST</h4>
 
                     <div className="d-flex gap-2">
                         <Button size="sm" className="me-2" onClick={handleShow}>
@@ -123,7 +123,7 @@ const GstTable = () => {
 
                         >
 
-                            <span className="ms-2" onClick={() => handleUpdateGst()}>Update Gst</span>
+                            <span className="ms-2" onClick={() => handleUpdateGst()}>Update GST</span>
                         </Button>
                             </Modal.Footer>
                         </Modal>

@@ -1,52 +1,29 @@
-import React, { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { initializeMessaging, requestPermissionAndToken } from "../utils/firebase";
-import "../FirebaseNotificationPopup.css"; // optional for styling
 
 const FirebaseComponent = () => {
-  const [showPopup, setShowPopup] = useState(false);
-  const [token, setToken] = useState(null);
-
   useEffect(() => {
-    // Show popup if permission not granted yet
-    if (Notification.permission === "default") {
-      setShowPopup(true);
-    }
+    const handleUserInteraction = async () => {
+      try {
+        if (Notification.permission === "default") {
+          await initializeMessaging();
+          const token = await requestPermissionAndToken();
+          console.log("Permission granted, token:", token);
+        }
+      } catch (err) {
+        console.error("Permission error:", err);
+      } finally {
+        document.removeEventListener("click", handleUserInteraction);
+      }
+    };
+
+    document.addEventListener("click", handleUserInteraction, { once: true });
+
+    return () =>
+      document.removeEventListener("click", handleUserInteraction);
   }, []);
 
-  const handleEnableNotifications = async () => {
-    try {
-      await initializeMessaging();
-      const fcmToken = await requestPermissionAndToken();
-      setToken(fcmToken);
-      setShowPopup(false);
-      console.log("Notifications enabled:", fcmToken);
-    } catch (err) {
-      console.error("Failed to enable notifications:", err);
-    }
-  };
-
-  const handleClosePopup = () => {
-    setShowPopup(false);
-  };
-
-  if (!showPopup || token) return null; // hide if not needed or already enabled
-
-  return (
-    <div className="fcm-popup-overlay">
-      <div className="fcm-popup">
-        <h3>Enable Notifications</h3>
-        <p>Get notified for important updates and alerts.</p>
-        <div className="fcm-popup-buttons">
-          <button className="fcm-popup-allow" onClick={handleEnableNotifications}>
-            Allow
-          </button>
-          <button className="fcm-popup-deny" onClick={handleClosePopup}>
-            Not Now
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+  return null;
 };
 
 export default FirebaseComponent;
