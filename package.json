@@ -118,7 +118,7 @@
   },
   "scripts": {
     "start": "cross-env PORT=3004 react-scripts start",
-    "build": "react-scripts --max_old_space_size=8096 build",
+    "build": "cross-env CI=false react-scripts --max_old_space_size=8096 build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "lint": "eslint --fix --ext .js,.jsx .",
