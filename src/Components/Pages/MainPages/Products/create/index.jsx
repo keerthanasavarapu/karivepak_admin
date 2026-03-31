@@ -4,7 +4,7 @@ import { Button, Card, CardBody, Col, Container, Form, FormFeedback, FormGroup, 
 import CreatableSelect from 'react-select/creatable';
 import { Table } from '../../../../Table';
 import axios from 'axios';
-import { baseURL, productBaseURL } from '../../../../../Services/api/baseURL';
+import { baseURL, imageURL } from '../../../../../Services/api/baseURL';
 import { useFormik } from 'formik';
 import { useProductVariantContext } from '../../../../../context/hooks/useProductVariant';
 // import { options, options2, options3, options4 } from './OptionDatas';
@@ -17,7 +17,6 @@ function CreateProduct() {
     const navigate = useNavigate();
     const { data, setData, setOriginalData } = useProductVariantContext();
     const [collectionData, setCollectionData] = useState([]);
-    const [subCollectionData, setSubCollectionData] = useState([]);
     const [brandData, setBrandData] = useState([]);
     const [selectedTags, setSelectedTags] = useState([]);
     const [token, setToken] = useState(null);
@@ -101,8 +100,6 @@ function CreateProduct() {
 
     const validationSchema = Yup.object().shape({
         category: Yup.string().required('Category is required'),
-        // subCategory: Yup.string().required('Subcategory is required'),
-        brand: Yup.string().required('Brand is required'),
         productName: Yup.string().required('Product Name is required'),
         description: Yup.string()
             .required('Product Description is required')
@@ -113,7 +110,6 @@ function CreateProduct() {
     const formik = useFormik({
         initialValues: {
             category: "",
-            subCategory: "",
             brand: "",
             productName: "",
             description: "",
@@ -158,40 +154,65 @@ function CreateProduct() {
 
                 setIsLoading(true);
 
-                let res;
-                if (id) {
-                    let data = values?.variants;
-                    let obj = {
-                        variantCode: data?.variantCode,
-                        variantName: data?.variantName,
-                       // // sellingPrice: data?.sellingPrice,
-                        purchasePrice: data?.purchasePrice,
-                        quantity: data?.quantity,
-                        //// discount: data?.discount,
-                      //  // finalSellingPrice: data?.finalSellingPrice,
-                    }
+                const firstVariant = values.variants?.[0] || {};
+                const tagsList = Array.isArray(values.tags)
+                    ? values.tags.map((item) => (item?.value || item?.tag || item?.label || '').trim()).filter(Boolean)
+                    : [];
 
-                    if (data?.variantImage) {
-                        obj.VariantImage = data?.variantImage;
+                const formData = new FormData();
+                formData.append('name', values.productName);
+                formData.append('main_category', values.category);
+                formData.append('category', values.category);
+                formData.append('description', values.description.trim());
+                formData.append('price', String(Number(firstVariant?.purchasePrice || 0)));
+                formData.append('stock', String(Number(firstVariant?.quantity || 0)));
+                formData.append('quantity', String(Number(firstVariant?.quantity || 1)));
+                formData.append('weight', firstVariant?.vol || '50gm');
+                formData.append('itemDetails', (firstVariant?.description || values.description || '').trim());
+                formData.append('tags', JSON.stringify(tagsList));
+
+                const variantImagePaths = (values.variants || [])
+                    .map((variant) => variant?.variantImage)
+                    .filter(Boolean)
+                    .slice(0, 5);
+
+                // Convert image URLs from variant uploads into files expected by /api/products
+                for (const imagePath of variantImagePaths) {
+                    const imageSrc = imagePath.startsWith('http') ? imagePath : `${imageURL}${imagePath}`;
+                    try {
+                        const fileResponse = await fetch(imageSrc);
+                        if (!fileResponse.ok) continue;
+                        const imageBlob = await fileResponse.blob();
+                        const fileName = imagePath.split('/').pop() || `product-${Date.now()}.jpg`;
+                        const imageFile = new File([imageBlob], fileName, { type: imageBlob.type || 'image/jpeg' });
+                        formData.append('image', imageFile);
+                    } catch (imgErr) {
+                        console.error('Image conversion failed for', imagePath, imgErr);
                     }
-                    res = await axios.patch(`${productBaseURL}/products/update-product/${id}`, formik.values, {
-                        headers: {
-                            Authorization: `${token}`,
-                        }
-                    });
-                }
-                else {
-                    res = await axios.post(`${productBaseURL}/products/add`, formik.values, {
-                        headers: {
-                            Authorization: `${token}`,
-                        }
-                    });
                 }
 
-                if (res?.status === 200) {
+                if (!id && !formData.getAll('image').length) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'At least one product image is required'
+                    });
+                    setIsLoading(false);
+                    return;
+                }
+
+                const endpoint = id ? `${baseURL}/api/products/${id}` : `${baseURL}/api/products`;
+                const method = id ? 'put' : 'post';
+                const res = await axios[method](endpoint, formData, {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'multipart/form-data',
+                    }
+                });
+
+                if (res?.status === 200 || res?.status === 201) {
                     Swal.fire({
                         icon: "success",
-                        title: res?.data?.message
+                        title: res?.data?.message || (id ? "Product updated successfully" : "Product added successfully")
                     })
 
                     navigate('/products');
@@ -205,7 +226,7 @@ function CreateProduct() {
             catch (error) {
                 Swal.fire({
                     icon: "error",
-                    title: error?.response?.data?.message?.details[0]?.message
+                    title: error?.response?.data?.message || "Failed to save product"
                 })
                 console.error(error);
                 setIsLoading(false);
@@ -243,22 +264,6 @@ function CreateProduct() {
         }
     }
 
-    const fetchSubcollectionsList = async () => {
-        const token = await JSON.parse(localStorage.getItem("token"))
-        try {
-            const response = await axios.get(`${baseURL}/api/admin/get-sub-collections?page=1&limit=1000`, {
-                headers: {
-                    Authorization: `${token}`
-                }
-            })
-            let data = response?.data?.data.filter((item) => item.status === "active")
-            setSubCollectionData(data)
-
-        } catch (error) {
-            console.log(error)
-        }
-    }
-
     const fetchBrandList = async () => {
         const token = await JSON.parse(localStorage.getItem("token"))
         try {
@@ -277,7 +282,6 @@ function CreateProduct() {
 
     useEffect(() => {
         fetchCategoryList();
-        fetchSubcollectionsList();
         fetchBrandList();
 
         if (id) {
@@ -308,36 +312,40 @@ function CreateProduct() {
     const getEditVariantData = async () => {
         const token = await JSON.parse(localStorage.getItem("token"))
         try {
-            const response = await axios.get(`${productBaseURL}/products/get-product/${id}`, {
+            const response = await axios.get(`${baseURL}/api/products/${id}`, {
                 headers: {
-                    Authorization: `${token}`,
+                    Authorization: `Bearer ${token}`,
                 }
             });
             if (response?.data?.success) {
-                let data = response?.data?.data;
-                // console.log(data, "data");
-                if (data[0]) {
-                    formik.setFieldValue("category", data[0]?.category?._id);
-                    formik.setFieldValue("subCategory", data[0]?.subCategory?._id);
-                    formik.setFieldValue("brand", data[0]?.brand?._id);
-                    formik.setFieldValue("productName", data[0]?.productName);
-                    formik.setFieldValue("description", data[0]?.description);
-                    formik.setFieldValue("tags", data[0]?.tags);
-                    const changedTags = data[0].tags.map(item => ({
-                        value: item.value,
-                        label: item.tag
-                    }));
+                const product = response?.data?.product;
+                if (product) {
+                    formik.setFieldValue("category", product?.main_category?._id || product?.category?._id || "");
+                    formik.setFieldValue("productName", product?.name || "");
+                    formik.setFieldValue("description", product?.description || "");
 
-                    // console.log(changedTags, "changed tags")
-                    setSelectedTags(changedTags)
-                    // setSelectedTags((data[0]?.tags) ? {
+                    const changedTags = Array.isArray(product?.tags)
+                        ? product.tags.map((tag) => ({ value: tag, label: tag }))
+                        : [];
+                    formik.setFieldValue("tags", changedTags);
+                    setSelectedTags(changedTags);
 
-                    //     value: data[0].tags.value,
-                    //     label: data[0].tags.tag,
-                    // } : null);
-                    // console.log(selectedTags, "selectedTags")
-                    setData(data[0]?.variants);
-                    setOriginalData(data[0]?.variants);
+                    const mappedVariant = [{
+                        variantCode: '',
+                        variantImage: Array.isArray(product?.image) ? (product.image[0] || '') : '',
+                        purchasePrice: product?.price || 0,
+                        quantity: product?.quantity || 1,
+                        isTopSellingProduct: false,
+                        vol: product?.weight || '50gm',
+                        offers: [],
+                        alcohol_percentage: 0,
+                        isOfferApplied: false,
+                        status: product?.isActive ? "active" : "inactive",
+                        label: "none",
+                        description: product?.itemDetails || ""
+                    }];
+                    setData(mappedVariant);
+                    setOriginalData(mappedVariant);
                 }
 
             }
@@ -434,35 +442,6 @@ function CreateProduct() {
                                                 )}
                                             </FormGroup>
                                         </Col>
-                                        {
-                                            formik.values.category && (
-                                                <Col md={6}>
-                                                    <FormGroup>
-                                                        <Label>Subcategory <span className='text-danger'>*</span> </Label>
-                                                        <Input type='select' name='subCategory' onChange={formik.handleChange} value={formik.values.subCategory} onBlur={formik.handleBlur}>
-                                                            <option>Select Sub Category</option>
-                                                            {
-                                                                subCollectionData.length > 0 &&
-                                                                subCollectionData.filter((item => item?.collection_id?._id === formik.values.category)).map((data) => {
-                                                                    return (
-                                                                        <>
-                                                                            <option key={data?._id} value={data?._id}>{data?.sub_collection_name}</option>
-                                                                        </>
-                                                                    )
-                                                                })
-                                                            }
-                                                        </Input>
-                                                        {formik.touched.subCategory && formik.errors.subCategory ? (
-                                                            <span className="error text-danger">{formik.errors.subCategory}</span>
-                                                        ) : (
-                                                            ""
-                                                        )}
-                                                    </FormGroup>
-                                                </Col>
-                                            )
-                                        }
-
-
                                         <Col md={6}>
                                             <FormGroup>
                                                 <Label>Product Description <span className='text-danger'>*</span> </Label>

@@ -218,20 +218,19 @@ const formik = useFormik({
         image: Yup.mixed().test(
             "required-image",
             "Image is required",
-            function () {
-                const { files, id } = this.options.context;
+            function (value) {
+                const { id } = this.options.context;
 
                 // If editing AND user didn't upload new file → allow
-                if (id && (!files || files.length === 0)) return true;
+                if (id && (!value || (Array.isArray(value) && value.length === 0))) return true;
 
                 // If creating → at least one image required
-                return files && files.length > 0;
+                return value && (!Array.isArray(value) || value.length > 0);
             }
         ),
     }),
 
-    // ⭐ REQUIRED to pass files and id into Yup test
-    context: { files, id },
+    context: { id },
 
     onSubmit: async (values) => {
         setLoading(true);
@@ -249,15 +248,21 @@ const formik = useFormik({
                 });
             }
 
+            formData.append("status", "active");
+
+            const authorizationHeader = token?.startsWith("Bearer ")
+                ? token
+                : `Bearer ${token}`;
+
             let response;
 
             if (id) {
-                response = await axios.patch(
-                    `${baseURL}/api/banner/${id}/status`,
+                response = await axios.put(
+                    `${baseURL}/api/banner/${id}`,
                     formData,
                     {
                         headers: {
-                            Authorization: `${token}`,
+                            Authorization: authorizationHeader,
                             "Content-Type": "multipart/form-data",
                         }
                     }
@@ -268,7 +273,7 @@ const formik = useFormik({
                     formData,
                     {
                         headers: {
-                            Authorization: `${token}`,
+                            Authorization: authorizationHeader,
                             "Content-Type": "multipart/form-data",
                         }
                     }
@@ -333,10 +338,11 @@ const formik = useFormik({
                 newSrcList.push(e.target.result);
                 newCropList.push({ aspect: 16 / 4 });
 
-                if (newFiles.length === fileList.length) {
+                if (newFiles.length === filteredFiles.length) {
                     setFiles(newFiles);
                     setImages(newSrcList);
                     setCropList(newCropList);
+                    formik.setFieldValue("image", newFiles);
                 }
             };
 

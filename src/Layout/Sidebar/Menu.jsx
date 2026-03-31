@@ -26,7 +26,6 @@ export const MENUITEMS = [
         badge: "badge badge-light-danger",
         children: [
           { path: `/category`, title: "Category", type: "link" },
-          { path: `/sub-category`, title: "Sub-Category", type: "link" },
           { path: `/products`, title: "Products", type: "link" },
           // { path: `/variants`, title: "Variants", type: "link" },
         ],

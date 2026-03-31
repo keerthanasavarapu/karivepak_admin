@@ -1,6 +1,5 @@
 import { initializeApp } from "firebase/app";
 import { getMessaging, getToken, onMessage, isSupported } from "firebase/messaging";
-import Cookies from "js-cookie";
 import { baseURL } from "../Services/api/baseURL";
 import axios from "axios";
 
@@ -8,13 +7,13 @@ import axios from "axios";
 
 
 const firebaseConfig = {
-  apiKey: "AIzaSyCrzS2y2VS0u8FyV6vgx5FBKBwlE1Ov8rQ",
-  authDomain: "bodegaa-d1c90.firebaseapp.com",
-  projectId: "bodegaa-d1c90",
-  storageBucket: "bodegaa-d1c90.firebasestorage.app",
-  messagingSenderId: "20393531023",
-  appId: "1:20393531023:web:fe0d145c385895c39282fa",
-  measurementId: "G-9MGS6EDJ69"
+  apiKey: "AIzaSyDi55PY9Ql51owucu5ZFDk3fEAieeWwURs",
+  authDomain: "karivepak-980a7.firebaseapp.com",
+  projectId: "karivepak-980a7",
+  storageBucket: "karivepak-980a7.firebasestorage.app",
+  messagingSenderId: "476130235766",
+  appId: "1:476130235766:web:114d2743438d0db847d657",
+  measurementId: "G-2MBGYGJSD3"
 };
 
 const app = initializeApp(firebaseConfig);

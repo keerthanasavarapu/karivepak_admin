@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import DataTable from 'react-data-table-component';
 import {
     Button,
@@ -49,7 +49,6 @@ const ProductsTable = () => {
     });
 
     const [categories, setCategories] = useState([]);
-    const [subCategories, setSubCategories] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [maincategory, setMainCategory] = useState([]);
     const [selectedVariantForView, setSelectedVariantForView] = useState(null);
@@ -72,7 +71,6 @@ const ProductsTable = () => {
     const [formData, setFormData] = useState({
         productName: '',
         categoryId: '',
-        subCategoryId: '',
         weight: '',
         weightUnit: '',
         quantity: 1,
@@ -85,6 +83,20 @@ const ProductsTable = () => {
         discountPrice: '',
         stock: ''
     });
+
+    const [variants, setVariants] = useState([]);
+
+    const addVariant = () => {
+        setVariants(prev => [...prev, { weight: '', weightUnit: 'g', price: '', discountPrice: '', stock: '' }]);
+    };
+
+    const removeVariant = (idx) => {
+        setVariants(prev => prev.filter((_, i) => i !== idx));
+    };
+
+    const updateVariant = (idx, field, value) => {
+        setVariants(prev => prev.map((v, i) => i === idx ? { ...v, [field]: value } : v));
+    };
     // Authentication
     const token = localStorage.getItem('token') ?
         JSON.parse(localStorage.getItem('token')) : null;
@@ -122,20 +134,14 @@ const ProductsTable = () => {
         }
     };
 
-    // Fetch Categories & Subcategories, then Products
+    // Fetch Categories, then Products
     const fetchInitialData = useCallback(async () => {
         try {
-            const [categoriesRes, subCategoriesRes] = await Promise.all([
-                axios.get(`${baseURL}/api/maincategory`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                }),
-                axios.get(`${baseURL}/api/category`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                })
-            ]);
+            const categoriesRes = await axios.get(`${baseURL}/api/maincategory`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
 
             setCategories(categoriesRes.data.mainCategories || []);
-            setSubCategories(subCategoriesRes.data.categories || []);
 
             await fetchProducts(1);
         } catch (error) {
@@ -179,11 +185,25 @@ const ProductsTable = () => {
                 quantity: product?.quantity || 1,
                 description: product?.description || '',
                 categoryId: product?.main_category?._id || '',
-                subCategoryId: product?.category?._id || '',
                 image: [],
                 imagePreview: Array.isArray(product?.image) ? product.image : [],
                 tags: product.tags || []
             });
+
+            if (Array.isArray(product?.variants) && product.variants.length > 0) {
+                setVariants(product.variants.map(v => {
+                    const vm = /^(\d+(?:\.\d+)?)([a-zA-Z]+)$/.exec(v.weight || '');
+                    return {
+                        weight: vm ? vm[1] : v.weight || '',
+                        weightUnit: vm ? vm[2] : 'g',
+                        price: v.price || '',
+                        discountPrice: v.discountPrice || '',
+                        stock: v.stock || ''
+                    };
+                }));
+            } else {
+                setVariants([]);
+            }
 
             if (product?.itemDetails) {
                 try {
@@ -214,11 +234,11 @@ const ProductsTable = () => {
             quantity: 1,
             description: '',
             categoryId: '',
-            subCategoryId: '',
             image: [],
             imagePreview: [],
             tags: []
         });
+        setVariants([]);
         setProductDetails([{ id: Date.now(), details: [{ id: Date.now() + 1, key: '', value: '' }] }]);
     };
 
@@ -252,7 +272,7 @@ const ProductsTable = () => {
         const data = new FormData();
         data.append('name', formData.productName);
         data.append('main_category', formData.categoryId);
-        data.append('category', formData.subCategoryId);
+        data.append('category', formData.categoryId);
         data.append('description', formData.description.trim());
         data.append('price', formData.price);
         data.append('discountPrice', formData.discountPrice);
@@ -261,6 +281,16 @@ const ProductsTable = () => {
         data.append('quantity', formData.quantity);
         data.append('itemDetails', JSON.stringify(flatDetails));
         data.append('tags', JSON.stringify(formData.tags));
+
+        const validVariants = variants
+            .filter(v => v.weight && v.price)
+            .map(v => ({
+                weight: `${v.weight}${v.weightUnit}`,
+                price: Number(v.price),
+                discountPrice: v.discountPrice ? Number(v.discountPrice) : null,
+                stock: Number(v.stock || 0)
+            }));
+        data.append('variants', JSON.stringify(validVariants));
 
         // ✅ Add images to FormData
         formData.image.forEach((file) => {
@@ -442,11 +472,6 @@ const ProductsTable = () => {
             sortable: true,
         },
         {
-            name: 'Sub Category',
-            selector: row => row.category?.name || 'N/A',
-            sortable: true,
-        },
-        {
             name: 'Price (₹)',
             selector: row => row.price,
             sortable: true,
@@ -544,12 +569,6 @@ const ProductsTable = () => {
             right: true,
         },
     ];
-
-    const filteredSubCategories = useMemo(() => {
-        return subCategories.filter(
-            sub => sub?.main_category?._id === formData.categoryId
-        );
-    }, [subCategories, formData.categoryId]);
 
     const filteredProducts = (products.data || []).filter(item =>
         (item.name || '').toLowerCase().includes((searchTerm || '').toLowerCase())
@@ -726,7 +745,6 @@ Trying to upload: ${newFiles.length}`,
                                             setFormData((prev) => ({
                                                 ...prev,
                                                 categoryId: e.target.value,
-                                                subCategoryId: '',
                                             }))
                                         }
                                         required
@@ -741,32 +759,6 @@ Trying to upload: ${newFiles.length}`,
                                 </FormGroup>
                             </Col>
 
-                            <Col md={6}>
-                                <FormGroup>
-                                    <Label>
-                                        Sub Category <span className="text-danger">*</span>
-                                    </Label>
-                                    <Input
-                                        type="select"
-                                        value={formData.subCategoryId}
-                                        onChange={(e) =>
-                                            setFormData((prev) => ({
-                                                ...prev,
-                                                subCategoryId: e.target.value,
-                                            }))
-                                        }
-                                        disabled={!formData.categoryId}
-                                        required
-                                    >
-                                        <option value="">Select Sub Category</option>
-                                        {filteredSubCategories.map((subCat) => (
-                                            <option key={subCat._id} value={subCat._id}>
-                                                {subCat.name}
-                                            </option>
-                                        ))}
-                                    </Input>
-                                </FormGroup>
-                            </Col>
                         </Row>
 
 
@@ -788,101 +780,110 @@ Trying to upload: ${newFiles.length}`,
                         </FormGroup>
 
                         <FormGroup>
-                            <Label>
-                                Weight <span className="text-danger">*</span>
-                            </Label>
-                            <div className="d-flex gap-2">
+                            <div className="d-flex justify-content-between align-items-center mb-1">
+                                <Label className="mb-0">
+                                    Weight <span className="text-danger">*</span>
+                                </Label>
+                                <Button type="button" size="sm" color="success" outline onClick={addVariant} style={{ fontSize: '12px', padding: '2px 10px' }}>
+                                    <FiPlus size={12} className="me-1" /> Add more
+                                </Button>
+                            </div>
+
+                            {/* Default weight row */}
+                            <div className="d-flex gap-2 align-items-center mb-2">
                                 <Input
                                     type="number"
                                     min="0"
                                     step="any"
-                                    placeholder="Enter weight"
+                                    placeholder="e.g. 500"
                                     value={formData.weight}
                                     onChange={(e) =>
-                                        setFormData((prev) => ({
-                                            ...prev,
-                                            weight: e.target.value,
-                                        }))
+                                        setFormData((prev) => ({ ...prev, weight: e.target.value }))
                                     }
                                     required
+                                    style={{ maxWidth: '100px' }}
                                 />
                                 <Input
                                     type="select"
                                     value={formData.weightUnit}
                                     onChange={(e) =>
-                                        setFormData((prev) => ({
-                                            ...prev,
-                                            weightUnit: e.target.value,
-                                        }))
+                                        setFormData((prev) => ({ ...prev, weightUnit: e.target.value }))
                                     }
                                     required
+                                    style={{ maxWidth: '90px' }}
                                 >
-                                    <option value="">Select Unit</option>
-                                    <option value="g">grams</option>
-                                    <option value="kg">kgs</option>
+                                    <option value="">Unit</option>
+                                    <option value="g">g</option>
+                                    <option value="kg">kg</option>
                                     <option value="ml">ml</option>
                                     <option value="L">L</option>
                                 </Input>
+                                <Input
+                                    type="number" placeholder="Price ₹"
+                                    value={formData.price}
+                                    onChange={(e) => setFormData((prev) => ({ ...prev, price: e.target.value }))}
+                                    required
+                                    style={{ maxWidth: '100px' }}
+                                />
+                                <Input
+                                    type="number" placeholder="Discount ₹"
+                                    value={formData.discountPrice}
+                                    onChange={(e) => setFormData((prev) => ({ ...prev, discountPrice: e.target.value }))}
+                                    style={{ maxWidth: '110px' }}
+                                />
+                                <Input
+                                    type="number" placeholder="Stock"
+                                    value={formData.stock}
+                                    onChange={(e) => setFormData((prev) => ({ ...prev, stock: e.target.value }))}
+                                    required
+                                    style={{ maxWidth: '80px' }}
+                                />
                             </div>
+
+                            {/* Extra variant rows */}
+                            {variants.map((v, idx) => (
+                                <div key={idx} className="d-flex gap-2 align-items-center mb-2">
+                                    <Input
+                                        type="number" min="0" step="any" placeholder="e.g. 250"
+                                        value={v.weight}
+                                        onChange={e => updateVariant(idx, 'weight', e.target.value)}
+                                        style={{ maxWidth: '100px' }}
+                                    />
+                                    <Input type="select" value={v.weightUnit} onChange={e => updateVariant(idx, 'weightUnit', e.target.value)} style={{ maxWidth: '90px' }}>
+                                        <option value="g">g</option>
+                                        <option value="kg">kg</option>
+                                        <option value="ml">ml</option>
+                                        <option value="L">L</option>
+                                    </Input>
+                                    <Input
+                                        type="number" placeholder="Price ₹"
+                                        value={v.price}
+                                        onChange={e => updateVariant(idx, 'price', e.target.value)}
+                                        style={{ maxWidth: '100px' }}
+                                    />
+                                    <Input
+                                        type="number" placeholder="Discount ₹"
+                                        value={v.discountPrice}
+                                        onChange={e => updateVariant(idx, 'discountPrice', e.target.value)}
+                                        style={{ maxWidth: '110px' }}
+                                    />
+                                    <Input
+                                        type="number" placeholder="Stock"
+                                        value={v.stock}
+                                        onChange={e => updateVariant(idx, 'stock', e.target.value)}
+                                        style={{ maxWidth: '80px' }}
+                                    />
+                                    <Button type="button" color="danger" size="sm" outline onClick={() => removeVariant(idx)} style={{ flexShrink: 0 }}>
+                                        <FiTrash size={13} />
+                                    </Button>
+                                </div>
+                            ))}
+                            <small className="text-muted" style={{ fontSize: '11px' }}>
+                                Weight · Unit · Price · Discount (optional) · Stock
+                            </small>
                         </FormGroup>
 
                         <Row>
-                            <Col md={6}>
-                                <FormGroup>
-                                    <Label>
-                                        Price <span className="text-danger">*</span>
-                                    </Label>
-                                    <Input
-                                        type="number"
-                                        value={formData.price}
-                                        onChange={(e) =>
-                                            setFormData((prev) => ({
-                                                ...prev,
-                                                price: e.target.value,
-                                            }))
-                                        }
-                                        required
-                                    />
-                                </FormGroup>
-
-                            </Col>
-                            <Col md={6}>
-                                <FormGroup>
-                                    <Label>
-                                        Discount Price
-                                    </Label>
-                                    <Input
-                                        type="number"
-                                        value={formData.discountPrice}
-                                        onChange={(e) =>
-                                            setFormData((prev) => ({
-                                                ...prev,
-                                                discountPrice: e.target.value,
-                                            }))
-                                        }
-
-                                    />
-                                </FormGroup>
-
-                            </Col>
-                            <Col md={6}>
-                                <FormGroup>
-                                    <Label>
-                                        Stock <span className="text-danger">*</span>
-                                    </Label>
-                                    <Input
-                                        type="number"
-                                        value={formData.stock}
-                                        onChange={(e) =>
-                                            setFormData((prev) => ({
-                                                ...prev,
-                                                stock: e.target.value,
-                                            }))
-                                        }
-                                        required
-                                    />
-                                </FormGroup>
-                            </Col>
                             <Col>
                                 <FormGroup>
                                     <Label>

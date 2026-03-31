@@ -8,7 +8,11 @@ export default function FetchServices() {
   const isNotAuthorized = (status) => {
     if (status === 401) {
       Storage.remove(Storage.localStorageKey);
-      window.location.reload();
+      localStorage.removeItem("login");
+      localStorage.removeItem("authenticated");
+      localStorage.removeItem("UserData");
+      localStorage.removeItem("role_name");
+      window.location.href = "/login";
     }
   };
 

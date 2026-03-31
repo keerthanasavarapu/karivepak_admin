@@ -9,7 +9,7 @@ import man from "../assets/images/dashboard/profile.png";
 import CustomizerContext from "../_helper/Customizer";
 import OtherWay from "./OtherWay";
 import { ToastContainer, toast } from "react-toastify";
-import CubaIcon from '../../src/assets/images/logo/Bodegaaa.png';
+import CubaIcon from '../assets/images/logo/Logo.svg';
 
 
 import axios from 'axios'
@@ -20,6 +20,7 @@ const Signin = ({ selected }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [togglePassword, setTogglePassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const history = useNavigate();
 
   const { layoutURL } = useContext(CustomizerContext);
@@ -34,31 +35,32 @@ const Signin = ({ selected }) => {
 
   const loginAuth = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
     try {
-      const obj = {
-        email: email,
-        password: password,
-      }
-      console.log(obj,"inside")
-      // const endPoint = loginType === 'Admin' ? '/admin/login' : '/store/store-login';
-      // const postuser = await axios.post(`${baseURL}/api${endPoint}`, obj)
-      const postuser = await axios.post(`${baseURL}/api/auth/login`,obj)
-      console.log(postuser,"clicked login")
+      const obj = { email: email, password: password };
+      const postuser = await axios.post(`${baseURL}/api/auth/login`, obj, { timeout: 90000 });
       toast.success("Successfully logged in!..");
       const token = postuser.data.token;
-      const full_Name = postuser.data?.user?.name
-      setName(full_Name)
+      const full_Name = postuser.data?.user?.name;
+      setName(full_Name);
       localStorage.setItem("UserData", JSON.stringify(postuser.data.user));
-      localStorage.setItem("token", JSON.stringify(token))
+      localStorage.setItem("token", JSON.stringify(token));
       localStorage.setItem("login", JSON.stringify(true));
       localStorage.setItem("authenticated", JSON.stringify(true));
-      localStorage.setItem("role_name", JSON.stringify(postuser?.data?.user?.role) )
+      localStorage.setItem("role_name", JSON.stringify(postuser?.data?.user?.role));
       history(`/dashboard`);
-
     } catch (error) {
-      toast.error("You enter wrong password or username!..");
-      console.log(error)
-
+      console.log(error);
+      const status = error?.response?.status;
+      if (!error.response || error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK') {
+        toast.error("Server is starting up, please wait a moment and try again.", { autoClose: 6000 });
+      } else if (status === 401) {
+        toast.error("Invalid email or password. Please check your credentials.");
+      } else {
+        toast.error("Something went wrong. Please try again.");
+      }
+    } finally {
+      setIsLoading(false);
     }
     // if (email === "test@gmail.com" && password === "test123") {
     //   localStorage.setItem("login", JSON.stringify(true));
@@ -133,7 +135,19 @@ const Signin = ({ selected }) => {
                     {/* <a className="link" href="#javascript">
                       {ForgotPassword}
                     </a> */}
-                    <button className="d-block w-100 mt-2 py-2.5 rounded-xl text-white bg-[#007F2D]" onClick={(e) => loginAuth(e)}>{SignIn}</button>
+                    <button
+                      className="d-block w-100 mt-2 py-2.5 rounded-xl text-white bg-[#007F2D]"
+                      onClick={(e) => loginAuth(e)}
+                      disabled={isLoading}
+                      style={{ opacity: isLoading ? 0.7 : 1, cursor: isLoading ? 'not-allowed' : 'pointer' }}
+                    >
+                      {isLoading ? "Signing in..." : SignIn}
+                    </button>
+                    {isLoading && (
+                      <p style={{ textAlign: 'center', fontSize: '12px', color: '#888', marginTop: '8px' }}>
+                        Server is waking up, this may take up to 30 seconds...
+                      </p>
+                    )}
                   </div>
                   {/* <div className="flex justify-center items-center mt-2">
                     <p>Don't have account?<span className="text-[#d3178a]">Create Account</span></p>

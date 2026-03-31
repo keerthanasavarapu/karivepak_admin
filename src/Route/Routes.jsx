@@ -6,7 +6,6 @@ import Transactions from '../Components/Pages/MainPages/Transactions'
 import Statistics from '../Components/Pages/MainPages/Statistics';
 import Customers from '../Components/Pages/MainPages/Customers';
 import Category from '../Components/Pages/MainPages/Category/Index';
-import SubCategories from '../Components/Pages/MainPages/SubCategories/SubCategories';
 import Users from '../Components/Pages/MainPages/Users';
 // import LogActivity from '../Components/Pages/MainPages/LogActivity'
 // import Settings from '../Components/Pages/MainPages/Settings';
@@ -83,7 +82,6 @@ let routes = [
   // Product Route Start
   { path: `/products`, Component: <Products /> },
   { path: `/category`, Component: <Category /> },
-  { path: `/sub-category`, Component: <SubCategories /> },
   { path: '/product/create', Component: <CreateProduct /> },
   { path: '/product/edit/:id', Component: <CreateProduct /> },
 
