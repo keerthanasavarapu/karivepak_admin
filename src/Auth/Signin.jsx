@@ -33,12 +33,17 @@ const Signin = ({ selected }) => {
     localStorage.setItem("Name", name);
   }, [value, name]);
 
-  const loginAuth = async (e) => {
-    e.preventDefault();
+  const loginAuth = async (event) => {
+    event.preventDefault();
     setIsLoading(true);
     try {
-      const obj = { email: email, password: password };
-      const postuser = await axios.post(`${baseURL}/api/auth/login`, obj, { timeout: 90000 });
+      const normalizedEmail = email.trim().toLowerCase();
+      const normalizedPassword = password.trim();
+      const loginPayload = {
+        email: normalizedEmail,
+        password: normalizedPassword,
+      };
+      const postuser = await axios.post(`${baseURL}/api/auth/login`, loginPayload, { timeout: 90000 });
       toast.success("Successfully logged in!..");
       const token = postuser.data.token;
       const full_Name = postuser.data?.user?.name;
@@ -52,12 +57,15 @@ const Signin = ({ selected }) => {
     } catch (error) {
       console.log(error);
       const status = error?.response?.status;
+      const serverMessage = error?.response?.data?.message;
       if (!error.response || error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK') {
         toast.error("Server is starting up, please wait a moment and try again.", { autoClose: 6000 });
+      } else if (status === 401 && serverMessage) {
+        toast.error(serverMessage);
       } else if (status === 401) {
         toast.error("Invalid email or password. Please check your credentials.");
       } else {
-        toast.error("Something went wrong. Please try again.");
+        toast.error(serverMessage || "Something went wrong. Please try again.");
       }
     } finally {
       setIsLoading(false);
@@ -81,7 +89,7 @@ const Signin = ({ selected }) => {
           <Col xs="12">
             <div className="login-card">
               <div className="login-main login-tab">
-                <Form className="theme-form">
+                <Form className="theme-form" onSubmit={loginAuth}>
 
                   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }} >
                     <Image attrImage={{ className: 'img-fluid d-inline w-50', src: `${CubaIcon}`, alt: '' }} />
@@ -136,8 +144,8 @@ const Signin = ({ selected }) => {
                       {ForgotPassword}
                     </a> */}
                     <button
+                      type="submit"
                       className="d-block w-100 mt-2 py-2.5 rounded-xl text-white bg-[#007F2D]"
-                      onClick={(e) => loginAuth(e)}
                       disabled={isLoading}
                       style={{ opacity: isLoading ? 0.7 : 1, cursor: isLoading ? 'not-allowed' : 'pointer' }}
                     >
