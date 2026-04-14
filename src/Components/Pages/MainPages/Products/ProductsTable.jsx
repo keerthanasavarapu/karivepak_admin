@@ -36,6 +36,73 @@ import { FaEye, FaPen, FaTrash, FaTrashAlt } from 'react-icons/fa';
 import VariantDetailsView from './VariantDetailsView';
 
 
+const parseWeightAndUnit = (rawWeightValue, fallbackUnit = 'g') => {
+    if (rawWeightValue === null || rawWeightValue === undefined) {
+        return { weight: '', weightUnit: fallbackUnit };
+    }
+
+    const normalizedWeightText = String(rawWeightValue).trim();
+    if (!normalizedWeightText) {
+        return { weight: '', weightUnit: fallbackUnit };
+    }
+
+    const exactMatch = /^(\d+(?:\.\d+)?)\s*([a-zA-Z]+)$/.exec(normalizedWeightText);
+    if (exactMatch) {
+        return {
+            weight: exactMatch[1],
+            weightUnit: exactMatch[2]
+        };
+    }
+
+    const numericOnlyMatch = /^(\d+(?:\.\d+)?)$/.exec(normalizedWeightText);
+    if (numericOnlyMatch) {
+        return {
+            weight: numericOnlyMatch[1],
+            weightUnit: fallbackUnit
+        };
+    }
+
+    // Fallback for malformed legacy values (keeps only the numeric part for numeric input fields)
+    const firstNumericMatch = normalizedWeightText.match(/\d+(?:\.\d+)?/);
+    return {
+        weight: firstNumericMatch ? firstNumericMatch[0] : '',
+        weightUnit: fallbackUnit
+    };
+};
+
+const formatWeightValue = (weightValue, weightUnit, fallbackUnit = 'g') => {
+    const normalizedWeightText = String(weightValue ?? '').trim();
+    const normalizedUnitText = String(weightUnit || fallbackUnit).trim();
+
+    const alreadyFormattedMatch = /^(\d+(?:\.\d+)?)\s*([a-zA-Z]+)$/.exec(normalizedWeightText);
+    if (alreadyFormattedMatch) {
+        return `${alreadyFormattedMatch[1]}${alreadyFormattedMatch[2]}`;
+    }
+
+    const numericOnlyMatch = /^(\d+(?:\.\d+)?)$/.exec(normalizedWeightText);
+    if (numericOnlyMatch) {
+        return `${numericOnlyMatch[1]}${normalizedUnitText}`;
+    }
+
+    return `${normalizedWeightText}${normalizedUnitText}`;
+};
+
+const getDisplayWeightText = (productItem) => {
+    const baseWeightText = String(productItem?.weight || '').trim();
+
+    const variantWeightValues = Array.isArray(productItem?.variants)
+        ? productItem.variants
+            .map((variantEntry) => String(variantEntry?.weight || '').trim())
+            .filter((variantWeightText) => variantWeightText.length > 0)
+        : [];
+
+    const allWeightValues = [baseWeightText, ...variantWeightValues]
+        .filter((weightText) => weightText.length > 0);
+
+    const uniqueWeightValues = Array.from(new Set(allWeightValues));
+    return uniqueWeightValues.join(', ');
+};
+
 const ProductsTable = () => {
     // State Management
     const [loading, setLoading] = useState(false);
@@ -187,17 +254,15 @@ const ProductsTable = () => {
                 console.warn('Could not refresh product list, using cached data:', fetchErr.message);
             }
 
-            const weightMatch = /^(\d+(?:\.\d+)?)([a-zA-Z]+)$/.exec(freshProduct.weight || '');
-            const weight = weightMatch ? weightMatch[1] : '';
-            const weightUnit = weightMatch ? weightMatch[2] : 'g';
+            const parsedBaseWeight = parseWeightAndUnit(freshProduct.weight, 'g');
 
             setFormData({
                 productName: freshProduct?.name || '',
                 price: freshProduct?.price || '',
                 discountPrice: freshProduct?.discountPrice || '',
                 stock: freshProduct?.stock || '',
-                weight,
-                weightUnit,
+                weight: parsedBaseWeight.weight,
+                weightUnit: parsedBaseWeight.weightUnit,
                 quantity: freshProduct?.quantity || 1,
                 description: freshProduct?.description || '',
                 categoryId: freshProduct?.main_category?._id || '',
@@ -208,10 +273,10 @@ const ProductsTable = () => {
 
             if (Array.isArray(freshProduct?.variants) && freshProduct.variants.length > 0) {
                 setVariants(freshProduct.variants.map(variantItem => {
-                    const vm = /^(\d+(?:\.\d+)?)([a-zA-Z]+)$/.exec(variantItem.weight || '');
+                    const parsedVariantWeight = parseWeightAndUnit(variantItem.weight, 'g');
                     return {
-                        weight: vm ? vm[1] : String(variantItem.weight || ''),
-                        weightUnit: vm ? vm[2] : 'g',
+                        weight: parsedVariantWeight.weight,
+                        weightUnit: parsedVariantWeight.weightUnit,
                         price: variantItem.price || '',
                         discountPrice: variantItem.discountPrice || '',
                         stock: variantItem.stock || ''
@@ -293,7 +358,7 @@ const ProductsTable = () => {
         data.append('price', formData.price);
         data.append('discountPrice', formData.discountPrice);
         data.append('stock', formData.stock);
-        data.append('weight', `${formData.weight}${formData.weightUnit}`);
+        data.append('weight', formatWeightValue(formData.weight, formData.weightUnit));
         data.append('quantity', formData.quantity);
         data.append('itemDetails', JSON.stringify(flatDetails));
         data.append('tags', JSON.stringify(formData.tags));
@@ -305,8 +370,7 @@ const ProductsTable = () => {
                 String(variantItem.discountPrice || '').trim() !== '' ||
                 String(variantItem.stock || '').trim() !== '';
             const hasRequiredVariantValue =
-                String(variantItem.weight || '').trim() !== '' &&
-                String(variantItem.price || '').trim() !== '';
+                String(variantItem.weight || '').trim() !== '';
             return hasAnyVariantValue && !hasRequiredVariantValue;
         });
 
@@ -314,7 +378,7 @@ const ProductsTable = () => {
             Swal.fire({
                 icon: 'warning',
                 title: 'Incomplete Weight Rows',
-                text: 'Each added weight row must include both Weight and Price.'
+                text: 'Each added weight row must include Weight.'
             });
             return;
         }
@@ -322,7 +386,7 @@ const ProductsTable = () => {
         const validVariants = variants
             .filter((variantItem) => String(variantItem.weight || '').trim() !== '')
             .map((variantItem) => ({
-                weight: `${String(variantItem.weight).trim()}${variantItem.weightUnit}`,
+                weight: formatWeightValue(variantItem.weight, variantItem.weightUnit),
                 price: Number(variantItem.price || formData.price),
                 discountPrice: variantItem.discountPrice ? Number(variantItem.discountPrice) : null,
                 stock: Number(variantItem.stock || 0)
@@ -618,7 +682,7 @@ const ProductsTable = () => {
         },
         {
             name: 'Weight',
-            selector: row => row.weight,
+            selector: (row) => getDisplayWeightText(row),
             sortable: true,
             center: true,
         },
@@ -678,7 +742,7 @@ const ProductsTable = () => {
                                 <DropdownItem
                                     onClick={() => openModal('edit', row)}
                                 >
-                                    Update
+                                    Edit
                                     <FaPen />
                                 </DropdownItem>
                                 <DropdownItem
@@ -1210,7 +1274,7 @@ Trying to upload: ${newFiles.length}`,
 
                         <Row className="text-center p-2">
                             <Button type="submit">
-                                {modal.type === 'add' ? 'Add Product' : 'Update Product'}
+                                {modal.type === 'add' ? 'Add Product' : 'Edit Product'}
                             </Button>
                         </Row>
                     </Form>

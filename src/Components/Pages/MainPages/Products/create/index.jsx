@@ -389,13 +389,13 @@ function CreateProduct() {
                     <div className='page-title'>
                         <Row>
                             <Col xs='6'>
-                                <H3>{id ? "Update Product" : "Add a New Product"}</H3>
+                                <H3>{id ? "Edit Product" : "Add a New Product"}</H3>
                             </Col>
                             <Col xs='6'>
                                 <div className='text-right'>
                                     {!id && <Button onClick={() => handleReset()} className='me-3 reset_btn'>Reset All</Button>}
-                                    <Button className='save_btn' type='submit' >{!isLoading && (id ? "Update Details" : "Save Details")}
-                                        {isLoading && (id ? "Updating..." : "Saving...")}
+                                    <Button className='save_btn' type='submit' >{!isLoading && (id ? "Edit Details" : "Save Details")}
+                                        {isLoading && (id ? "Editing..." : "Saving...")}
                                     </Button>
                                 </div>
                             </Col>
