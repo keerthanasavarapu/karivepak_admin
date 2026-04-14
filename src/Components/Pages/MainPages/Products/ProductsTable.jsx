@@ -112,12 +112,14 @@ const ProductsTable = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
             console.log(response, "response of products")
+            const allProducts = Array.isArray(response?.data?.products) ? response.data.products : [];
+            const activeProducts = allProducts.filter((productItem) => productItem?.isActive !== false);
             setProducts({
-                data: response.data.products || [],
+                data: activeProducts,
             });
             setPagination(prev => ({
                 ...prev,
-                totalRows: response?.data?.products?.length
+                totalRows: activeProducts.length
             }));
 
             return response.data;
@@ -319,11 +321,11 @@ const ProductsTable = () => {
 
         const validVariants = variants
             .filter((variantItem) => String(variantItem.weight || '').trim() !== '')
-            .map(v => ({
-                weight: `${String(v.weight).trim()}${v.weightUnit}`,
-                price: Number(v.price || formData.price),
-                discountPrice: v.discountPrice ? Number(v.discountPrice) : null,
-                stock: Number(v.stock || 0)
+            .map((variantItem) => ({
+                weight: `${String(variantItem.weight).trim()}${variantItem.weightUnit}`,
+                price: Number(variantItem.price || formData.price),
+                discountPrice: variantItem.discountPrice ? Number(variantItem.discountPrice) : null,
+                stock: Number(variantItem.stock || 0)
             }));
         data.append('variants', JSON.stringify(validVariants));
 
@@ -339,12 +341,36 @@ const ProductsTable = () => {
 
             const method = modal.type === 'add' ? 'post' : 'put';
 
-            await axios[method](endpoint, data, {
+            const submitResponse = await axios[method](endpoint, data, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'
                 }
             });
+
+            const returnedProduct = submitResponse?.data?.product;
+            if (returnedProduct?._id) {
+                setProducts((previousProducts) => {
+                    const existingProducts = Array.isArray(previousProducts?.data) ? previousProducts.data : [];
+                    if (modal.type === 'add') {
+                        const existsAlready = existingProducts.some((existingProduct) => existingProduct._id === returnedProduct._id);
+                        if (existsAlready) {
+                            return previousProducts;
+                        }
+                        return {
+                            ...previousProducts,
+                            data: [returnedProduct, ...existingProducts]
+                        };
+                    }
+
+                    return {
+                        ...previousProducts,
+                        data: existingProducts.map((existingProduct) =>
+                            existingProduct._id === returnedProduct._id ? returnedProduct : existingProduct
+                        )
+                    };
+                });
+            }
 
             Swal.fire({
                 icon: 'success',
@@ -407,6 +433,13 @@ const ProductsTable = () => {
                 timer: 1500
             });
 
+            setProducts((previousProducts) => {
+                const existingProducts = Array.isArray(previousProducts?.data) ? previousProducts.data : [];
+                return {
+                    ...previousProducts,
+                    data: existingProducts.filter((existingProduct) => existingProduct._id !== product._id)
+                };
+            });
             fetchProducts(pagination.page);
         } catch (deleteError) {
             Swal.fire({
