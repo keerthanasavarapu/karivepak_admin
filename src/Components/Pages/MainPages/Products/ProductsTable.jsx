@@ -533,6 +533,29 @@ const ProductsTable = () => {
         }
     };
 
+    const dataTableStyles = {
+        tableWrapper: {
+            style: {
+                overflow: 'visible'
+            }
+        },
+        responsiveWrapper: {
+            style: {
+                overflow: 'visible'
+            }
+        },
+        rows: {
+            style: {
+                overflow: 'visible'
+            }
+        },
+        cells: {
+            style: {
+                overflow: 'visible'
+            }
+        }
+    };
+
     const columns = [
         {
             name: 'Image',
@@ -635,11 +658,11 @@ const ProductsTable = () => {
                     style={{ marginRight: "20px" }}
                 >
                     <div className="cursor-pointer">
-                        <UncontrolledDropdown className="action_dropdown">
+                        <UncontrolledDropdown className="action_dropdown" direction="up">
                             <DropdownToggle className="action_btn">
                                 <MoreVertical color="#000" size={16} />
                             </DropdownToggle>
-                            <DropdownMenu>
+                            <DropdownMenu end>
                                 <DropdownItem
                                     onClick={() => {
                                         setSelectedVariantForView(row);
@@ -828,6 +851,7 @@ Trying to upload: ${newFiles.length}`,
                 paginationRowsPerPageOptions={[10, 25, 50]}
                 progressPending={loading}
                 progressComponent={<Loader />}
+                customStyles={dataTableStyles}
             />
 
 
