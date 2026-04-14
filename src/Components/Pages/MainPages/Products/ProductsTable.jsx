@@ -282,11 +282,32 @@ const ProductsTable = () => {
         data.append('itemDetails', JSON.stringify(flatDetails));
         data.append('tags', JSON.stringify(formData.tags));
 
+        const hasIncompleteVariantRows = variants.some((variantItem) => {
+            const hasAnyVariantValue =
+                String(variantItem.weight || '').trim() !== '' ||
+                String(variantItem.price || '').trim() !== '' ||
+                String(variantItem.discountPrice || '').trim() !== '' ||
+                String(variantItem.stock || '').trim() !== '';
+            const hasRequiredVariantValue =
+                String(variantItem.weight || '').trim() !== '' &&
+                String(variantItem.price || '').trim() !== '';
+            return hasAnyVariantValue && !hasRequiredVariantValue;
+        });
+
+        if (hasIncompleteVariantRows) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Incomplete Weight Rows',
+                text: 'Each added weight row must include both Weight and Price.'
+            });
+            return;
+        }
+
         const validVariants = variants
-            .filter(v => v.weight && v.price)
+            .filter((variantItem) => String(variantItem.weight || '').trim() !== '')
             .map(v => ({
-                weight: `${v.weight}${v.weightUnit}`,
-                price: Number(v.price),
+                weight: `${String(v.weight).trim()}${v.weightUnit}`,
+                price: Number(v.price || formData.price),
                 discountPrice: v.discountPrice ? Number(v.discountPrice) : null,
                 stock: Number(v.stock || 0)
             }));

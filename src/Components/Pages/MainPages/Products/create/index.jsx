@@ -155,6 +155,16 @@ function CreateProduct() {
                 setIsLoading(true);
 
                 const firstVariant = values.variants?.[0] || {};
+                const normalizedVariants = Array.isArray(values.variants)
+                    ? values.variants
+                        .filter((variantItem) => variantItem?.vol && Number(variantItem?.purchasePrice) > 0)
+                        .map((variantItem) => ({
+                            weight: String(variantItem.vol).trim(),
+                            price: Number(variantItem.purchasePrice),
+                            stock: Number(variantItem.quantity || 0),
+                            discountPrice: null
+                        }))
+                    : [];
                 const tagsList = Array.isArray(values.tags)
                     ? values.tags.map((item) => (item?.value || item?.tag || item?.label || '').trim()).filter(Boolean)
                     : [];
@@ -170,6 +180,7 @@ function CreateProduct() {
                 formData.append('weight', firstVariant?.vol || '50gm');
                 formData.append('itemDetails', (firstVariant?.description || values.description || '').trim());
                 formData.append('tags', JSON.stringify(tagsList));
+                formData.append('variants', JSON.stringify(normalizedVariants));
 
                 const variantImagePaths = (values.variants || [])
                     .map((variant) => variant?.variantImage)
@@ -330,20 +341,35 @@ function CreateProduct() {
                     formik.setFieldValue("tags", changedTags);
                     setSelectedTags(changedTags);
 
-                    const mappedVariant = [{
-                        variantCode: '',
-                        variantImage: Array.isArray(product?.image) ? (product.image[0] || '') : '',
-                        purchasePrice: product?.price || 0,
-                        quantity: product?.quantity || 1,
-                        isTopSellingProduct: false,
-                        vol: product?.weight || '50gm',
-                        offers: [],
-                        alcohol_percentage: 0,
-                        isOfferApplied: false,
-                        status: product?.isActive ? "active" : "inactive",
-                        label: "none",
-                        description: product?.itemDetails || ""
-                    }];
+                    const mappedVariant = Array.isArray(product?.variants) && product.variants.length > 0
+                        ? product.variants.map((variantItem, variantIndex) => ({
+                            variantCode: '',
+                            variantImage: Array.isArray(product?.image) ? (product.image[variantIndex] || product.image[0] || '') : '',
+                            purchasePrice: variantItem?.price || 0,
+                            quantity: variantItem?.stock ?? product?.quantity ?? 1,
+                            isTopSellingProduct: false,
+                            vol: variantItem?.weight || '50gm',
+                            offers: [],
+                            alcohol_percentage: 0,
+                            isOfferApplied: false,
+                            status: product?.isActive ? "active" : "inactive",
+                            label: "none",
+                            description: product?.itemDetails || ""
+                        }))
+                        : [{
+                            variantCode: '',
+                            variantImage: Array.isArray(product?.image) ? (product.image[0] || '') : '',
+                            purchasePrice: product?.price || 0,
+                            quantity: product?.quantity || 1,
+                            isTopSellingProduct: false,
+                            vol: product?.weight || '50gm',
+                            offers: [],
+                            alcohol_percentage: 0,
+                            isOfferApplied: false,
+                            status: product?.isActive ? "active" : "inactive",
+                            label: "none",
+                            description: product?.itemDetails || ""
+                        }];
                     setData(mappedVariant);
                     setOriginalData(mappedVariant);
                 }

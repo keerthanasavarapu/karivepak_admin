@@ -36,6 +36,12 @@ export const TableCell = ({ getValue, row, column, table }) => {
     tableMeta?.updateData(row.index, column.id, value);
   };
 
+  const onInputValueChange = (event) => {
+    const changedValue = event.target.value;
+    setValue(changedValue);
+    tableMeta?.updateData(row.index, column.id, changedValue);
+  };
+
   const onFileChange = async (e) => {
     setLoading(true);
     try {
@@ -130,7 +136,7 @@ export const TableCell = ({ getValue, row, column, table }) => {
         </>
       ) :
         columnMeta?.type === "select" ? (
-          <select onChange={(e) => setValue(e.target.value)} onBlur={onBlur} className={`form-control ${isInvalid ? 'is-invalid' : ''}`}
+          <select onChange={onInputValueChange} onBlur={onBlur} className={`form-control ${isInvalid ? 'is-invalid' : ''}`}
             value={value}>
             {columnMeta?.options?.map((option) => (
               <option key={option.value} value={option.value}>{option.label}</option>
@@ -139,7 +145,7 @@ export const TableCell = ({ getValue, row, column, table }) => {
         ) : columnMeta?.type === "textarea" ? (
           <div> <textarea
             value={value}
-            onChange={(e) => setValue(e.target.value)}
+            onChange={onInputValueChange}
             onBlur={onBlur}
             type={columnMeta?.type || "text"}
             className={`form-control ${isInvalid ? 'is-invalid' : ''}`}
@@ -152,7 +158,7 @@ export const TableCell = ({ getValue, row, column, table }) => {
         ) : (
           <div> <input
             value={value}
-            onChange={(e) => setValue(e.target.value)}
+            onChange={onInputValueChange}
             onBlur={onBlur}
             type={columnMeta?.type || "text"}
             className={`form-control ${isInvalid ? 'is-invalid' : ''}`}
