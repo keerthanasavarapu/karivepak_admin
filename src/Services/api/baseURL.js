@@ -1,5 +1,5 @@
 // Live API origin (single source of truth)
-const LIVE_API_ORIGIN = "https://karivepakbackend-1.onrender.com";
+const LIVE_API_ORIGIN = "https://karivepak-backend.vercel.app";
 export const baseURL = LIVE_API_ORIGIN;
 
 
