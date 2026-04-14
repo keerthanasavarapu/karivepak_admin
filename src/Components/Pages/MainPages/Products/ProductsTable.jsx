@@ -167,47 +167,61 @@ const ProductsTable = () => {
         return () => clearTimeout(delaySearch);
     }, [searchTerm, pagination?.page]);
 
-    const openModal = (type, product = null) => {
+    const openModal = async (type, product = null) => {
         setModal({ isOpen: true, type, selectedProduct: product });
 
         if (product) {
-            const weightMatch = /^(\d+)([a-zA-Z]+)$/.exec(product.weight);
+            let freshProduct = product;
+            try {
+                const freshResponse = await axios.get(`${baseURL}/api/products/get-all-prodducts`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                const allProducts = freshResponse?.data?.products || [];
+                const found = allProducts.find(prod => prod._id === product._id);
+                if (found) {
+                    freshProduct = found;
+                }
+            } catch (fetchErr) {
+                console.warn('Could not refresh product list, using cached data:', fetchErr.message);
+            }
+
+            const weightMatch = /^(\d+(?:\.\d+)?)([a-zA-Z]+)$/.exec(freshProduct.weight || '');
             const weight = weightMatch ? weightMatch[1] : '';
-            const weightUnit = weightMatch ? weightMatch[2] : '';
+            const weightUnit = weightMatch ? weightMatch[2] : 'g';
 
             setFormData({
-                productName: product?.name || '',
-                price: product?.price || '',
-                discountPrice: product?.discountPrice || '',
-                stock: product?.stock || '',
+                productName: freshProduct?.name || '',
+                price: freshProduct?.price || '',
+                discountPrice: freshProduct?.discountPrice || '',
+                stock: freshProduct?.stock || '',
                 weight,
                 weightUnit,
-                quantity: product?.quantity || 1,
-                description: product?.description || '',
-                categoryId: product?.main_category?._id || '',
+                quantity: freshProduct?.quantity || 1,
+                description: freshProduct?.description || '',
+                categoryId: freshProduct?.main_category?._id || '',
                 image: [],
-                imagePreview: Array.isArray(product?.image) ? product.image : [],
-                tags: product.tags || []
+                imagePreview: Array.isArray(freshProduct?.image) ? freshProduct.image : [],
+                tags: freshProduct?.tags || []
             });
 
-            if (Array.isArray(product?.variants) && product.variants.length > 0) {
-                setVariants(product.variants.map(v => {
-                    const vm = /^(\d+(?:\.\d+)?)([a-zA-Z]+)$/.exec(v.weight || '');
+            if (Array.isArray(freshProduct?.variants) && freshProduct.variants.length > 0) {
+                setVariants(freshProduct.variants.map(variantItem => {
+                    const vm = /^(\d+(?:\.\d+)?)([a-zA-Z]+)$/.exec(variantItem.weight || '');
                     return {
-                        weight: vm ? vm[1] : v.weight || '',
+                        weight: vm ? vm[1] : String(variantItem.weight || ''),
                         weightUnit: vm ? vm[2] : 'g',
-                        price: v.price || '',
-                        discountPrice: v.discountPrice || '',
-                        stock: v.stock || ''
+                        price: variantItem.price || '',
+                        discountPrice: variantItem.discountPrice || '',
+                        stock: variantItem.stock || ''
                     };
                 }));
             } else {
                 setVariants([]);
             }
 
-            if (product?.itemDetails) {
+            if (freshProduct?.itemDetails) {
                 try {
-                    const parsed = JSON.parse(product.itemDetails);
+                    const parsed = JSON.parse(freshProduct.itemDetails);
                     if (Array.isArray(parsed)) setProductDetails(parsed);
                 } catch (err) {
                     console.warn('Failed to parse itemDetails:', err);
@@ -365,6 +379,42 @@ const ProductsTable = () => {
     const onFormSubmit = (e) => {
         e.preventDefault();
         handleSubmit(e);
+    };
+
+    const handleDeleteProduct = async (product) => {
+        const confirm = await Swal.fire({
+            icon: 'warning',
+            title: 'Delete Product?',
+            text: `Are you sure you want to permanently delete "${product.name}"? This cannot be undone.`,
+            showCancelButton: true,
+            confirmButtonText: 'Yes, Delete',
+            confirmButtonColor: '#d33',
+            cancelButtonText: 'Cancel'
+        });
+
+        if (!confirm.isConfirmed) return;
+
+        try {
+            await axios.delete(`${baseURL}/api/products/${product._id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            Swal.fire({
+                icon: 'success',
+                title: 'Deleted!',
+                text: `"${product.name}" has been deleted.`,
+                showConfirmButton: false,
+                timer: 1500
+            });
+
+            fetchProducts(pagination.page);
+        } catch (deleteError) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: deleteError.response?.data?.message || 'Failed to delete product. Please try again.'
+            });
+        }
     };
 
     const handleToggleStatus = async () => {
@@ -580,6 +630,14 @@ const ProductsTable = () => {
                                     onClick={() => openModal('toggleStatus', row)}
                                 >
                                     {row?.isActive ? "Mark as Inactive" : "Mark as Active"}
+                                </DropdownItem>
+                                <DropdownItem
+                                    className="delete_item"
+                                    style={{ color: '#d33' }}
+                                    onClick={() => handleDeleteProduct(row)}
+                                >
+                                    Delete
+                                    <FaTrash style={{ marginLeft: '6px' }} />
                                 </DropdownItem>
 
                             </DropdownMenu>
